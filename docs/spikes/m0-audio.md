@@ -71,6 +71,21 @@ own underrun counter and the recording agree, which validates both. CI runs
 all three (`.github/workflows/headless.yml`, `android.yml`); results appear
 in the job summary and as artifacts (logs, screenshots, FLAC recordings).
 
+## Results: Android emulator (CI, API 34 x86_64, profile build)
+
+| Look-ahead ms | Stress voices | Load % | Underruns / 20 s | Device start delay ms |
+|---|---|---|---|---|
+| 100 | 0 | 1.4 | 3 (first start only) | 0 |
+| 100 | 64 | 5.9 | 0 | 10 |
+| 50 | 0 | 1.4 | 0 | 3 |
+| 30 | 0 | 1.4 | 0 | 4 |
+| 20 | 0 | 1.5 | 528 | 2101 |
+
+CPU benchmark on the emulator: 14–79× real time with effects, 16–180×
+without. AAudio starts almost instantly; 30 ms look-ahead is clean, 20 ms is
+below the emulator's burst size. The UI test (drive the buttons, four
+screenshots) passes on the emulator's phone-size screen.
+
 ## Findings from the headless runs
 
 1. **Wall-clock pumping is wrong.** Pushing audio by the wall clock filled
@@ -88,7 +103,10 @@ in the job summary and as artifacts (logs, screenshots, FLAC recordings).
    UI thread gave 3–21 underruns per 8 s scenario in Chromium (a few short
    dropouts in the recording). Plan: render in an AudioWorklet or Worker
    (Wasm) behind the `AudioBackend` interface.
-4. **Clipboard can be unavailable** (headless browser): "Copy results" now
+4. **Phone-size layout**: the lazy list doesn't build off-screen rows, so
+   tests (and later, UI code) must scroll things into view. `PHONE_LAYOUT=true`
+   reproduces the phone layout on desktop.
+5. **Clipboard can be unavailable** (headless browser): "Copy results" now
    falls back to a selectable dialog.
 
 ## Blockers found (and fixed)

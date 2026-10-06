@@ -29,14 +29,21 @@ jobs:
       - run: flutter pub get
       - name: Run headless tests
         run: SPIKE_SECONDS=10 tool/headless/run_linux.sh
+      - name: UI test at phone size
+        if: always()
+        run: PHONE_LAYOUT=true tool/headless/run_linux.sh ui_test
       - name: Summary
         if: always()
-        run: cat build/headless/linux/summary.md >> "$GITHUB_STEP_SUMMARY" || true
+        run: |
+          cat build/headless/linux/summary.md >> "$GITHUB_STEP_SUMMARY" || true
+          cat build/headless/linux-phone/summary.md >> "$GITHUB_STEP_SUMMARY" || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: headless-linux
-          path: build/headless/linux
+          path: |
+            build/headless/linux
+            build/headless/linux-phone
           if-no-files-found: ignore
 
   web:

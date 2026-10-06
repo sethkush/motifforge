@@ -14,7 +14,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 APP="$ROOT/apps/audio_spike"
-OUT="$ROOT/build/headless/linux"
+OUT="$ROOT/build/headless/linux${PHONE_LAYOUT:+-phone}"
 SECONDS_PER_SCENARIO="${SPIKE_SECONDS:-10}"
 # Ask PulseAudio for low latency, as the real app must (otherwise Pulse gives
 # a ~2 s buffer and playback starts 1-2 s late). Override to test defaults.
@@ -69,6 +69,7 @@ for t in "${TESTS[@]}"; do
   (cd "$APP" && flutter drive --profile -d linux \
     --dart-define=SHOT_DIR="$OUT/screenshots" \
     --dart-define=SPIKE_SECONDS="$SECONDS_PER_SCENARIO" \
+    --dart-define=PHONE_LAYOUT="${PHONE_LAYOUT:-false}" \
     --driver=test_driver/integration_test.dart \
     --target="integration_test/$t.dart") >"$log" 2>&1
   rc=$?

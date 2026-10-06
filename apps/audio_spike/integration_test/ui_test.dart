@@ -12,6 +12,13 @@ void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('spike UI end to end', (tester) async {
+    // PHONE_LAYOUT simulates a phone-size screen on desktop, so phone-only
+    // layout problems reproduce without an emulator.
+    if (const bool.fromEnvironment('PHONE_LAYOUT')) {
+      tester.view.physicalSize = const Size(1080, 2340);
+      tester.view.devicePixelRatio = 2.625;
+      addTearDown(tester.view.reset);
+    }
     await tester.pumpWidget(const SpikeApp());
     await tester.pump();
     expect(find.text('Stopped'), findsOneWidget);
@@ -21,6 +28,7 @@ void main() {
     mark('ui-start');
     await tester.tap(find.text('Start'));
     await tester.pump();
+    await reveal(tester, find.text('Playing'));
     expect(find.text('Playing'), findsOneWidget);
     await waitReal(tester, const Duration(seconds: 4));
     await tester.pump();
@@ -54,6 +62,8 @@ void main() {
     await tester.tap(find.text('Stop'));
     await tester.pump();
     mark('ui-stop');
+    await reveal(tester, find.text('Start'));
+    await reveal(tester, find.text('Stopped'));
     expect(find.text('Stopped'), findsOneWidget);
     await screenshot(binding, tester, '03-stopped');
 

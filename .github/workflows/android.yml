@@ -82,35 +82,13 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -no-boot-anim -camera-back none
           disable-animations: true
           working-directory: apps/audio_spike
-          script: flutter drive --profile -d emulator-5554 --dart-define=SPIKE_SECONDS=${{ github.event.inputs.seconds || '20' }} --driver=test_driver/integration_test.dart --target=integration_test/spike_test.dart > spike-android.log 2>&1; status=$?; cat spike-android.log; exit $status
-      - name: Summarise results
+          script: ../../tool/headless/run_android.sh ${{ github.event.inputs.seconds || '20' }}
+      - name: Summary
         if: always()
-        working-directory: apps/audio_spike
-        run: |
-          python3 - <<'EOF' >> "$GITHUB_STEP_SUMMARY"
-          import json, re
-          try:
-              log = open('spike-android.log').read()
-          except FileNotFoundError:
-              print('No log produced.'); raise SystemExit
-          m = re.search(r'SPIKE_RESULT report (\{.*\})', log)
-          if not m:
-              print('## Audio spike (Android emulator)\n\nNo report found; see the job log.'); raise SystemExit
-          r = json.loads(m.group(1))
-          print(f"## Audio spike: Android emulator\n\n{r['platform']}, {r['secondsPerScenario']} s per scenario\n")
-          print('| Look-ahead ms | Stress voices | FX | Init | Load % | Peak chunk ms | Underruns | Full drops |')
-          print('|---|---|---|---|---|---|---|---|')
-          for p in r['playback']:
-              print(f"| {p['lookaheadMs']} | {p['stressVoices']} | {p['effects']} | {p['initResult']} | {p['loadPercent']} | {p['peakChunkMs']} | {p['underruns']} | {p['overflows']} |")
-          print('\n| CPU benchmark | Realtime factor | p99 chunk ms |\n|---|---|---|')
-          for b in r['benchmark']:
-              print(f"| {b['scenario']} | {b['realTimeFactor']}x | {b['p99ChunkMs']} |")
-          EOF
+        run: cat build/headless/android/summary.md >> "$GITHUB_STEP_SUMMARY" || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: audio-spike-android-results
-          path: |
-            apps/audio_spike/spike-android.log
-            apps/audio_spike/build/integration_response_data.json
+          name: headless-android
+          path: build/headless/android
           if-no-files-found: ignore

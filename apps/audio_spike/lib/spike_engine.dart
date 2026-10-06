@@ -55,6 +55,7 @@ class SpikeStats {
     required this.chunkBudgetMs,
     required this.underruns,
     required this.overflows,
+    required this.startDelayMs,
   });
 
   final SpikeSettings settings;
@@ -69,6 +70,11 @@ class SpikeStats {
   final int underruns;
   final int overflows;
 
+  /// How long the device took to start consuming audio, estimated as wall
+  /// time minus audio accepted (less the buffer, which is full at the end).
+  /// Only meaningful on native (backpressure) builds.
+  final double startDelayMs;
+
   Map<String, Object> toJson() => {
     ...settings.toJson(),
     'initResult': initResult,
@@ -79,11 +85,19 @@ class SpikeStats {
     'chunkBudgetMs': double.parse(chunkBudgetMs.toStringAsFixed(2)),
     'underruns': underruns,
     'overflows': overflows,
+    'startDelayMs': startDelayMs.round(),
   };
 }
 
-/// Drives the synth and the audio device: keeps the device buffer
-/// `lookaheadMs` ahead of the wall clock by rendering on a 5 ms timer.
+/// Drives the synth and the audio device on a 5 ms timer.
+///
+/// Native: **backpressure**. The device ring buffer is sized to the target
+/// latency (`lookaheadMs`) and each tick pushes until the device reports the
+/// buffer full; a rejected chunk is kept and retried next tick. Latency is
+/// therefore bounded by the buffer size, whatever the device start-up time.
+///
+/// Web: the plugin's push is fire-and-forget (no "full" signal), so we pace
+/// by the wall clock instead and keep `lookaheadMs` of audio queued.
 class SpikeEngine {
   SpikeEngine({AudioStream? stream}) : _stream = stream ?? getAudioStream();
 
@@ -101,6 +115,7 @@ class SpikeEngine {
   int _framesPushed = 0;
   int _renderMicros = 0;
   int _peakChunkMicros = 0;
+  Float32List? _pending;
 
   bool get running => _pump != null;
 
@@ -117,14 +132,15 @@ class SpikeEngine {
       stressVoices: s.stressVoices,
     );
     _initResult = _stream.init(
-      bufferMilliSec: s.lookaheadMs * 4,
-      waitingBufferMilliSec: s.lookaheadMs ~/ 2,
+      bufferMilliSec: kIsWeb ? s.lookaheadMs * 4 : s.lookaheadMs,
+      waitingBufferMilliSec: kIsWeb ? s.lookaheadMs ~/ 2 : s.lookaheadMs ~/ 4,
       channels: 2,
       sampleRate: sampleRate,
     );
     _stream.resume(); // web: must follow a user gesture
     _stream.resetStat();
     _framesPushed = 0;
+    _pending = null;
     _renderMicros = 0;
     _peakChunkMicros = 0;
     _clock
@@ -159,32 +175,49 @@ class SpikeEngine {
   void _fill() {
     final work = _work;
     if (work == null) return;
-    final target =
-        (_clock.elapsedMicroseconds * sampleRate / 1e6).round() +
-        settings.lookaheadMs * sampleRate ~/ 1000;
-    final left = Float32List(chunkFrames);
-    final right = Float32List(chunkFrames);
-    final interleaved = Float32List(chunkFrames * 2);
-    final sw = Stopwatch();
-    while (_framesPushed < target) {
-      sw
-        ..reset()
-        ..start();
-      if (settings.band) {
-        work.render(left, right);
-      } else {
-        _synth!.render(left, right);
+    if (kIsWeb) {
+      final target =
+          (_clock.elapsedMicroseconds * sampleRate / 1e6).round() +
+          settings.lookaheadMs * sampleRate ~/ 1000;
+      while (_framesPushed < target) {
+        _stream.push(_render(work));
+        _framesPushed += chunkFrames;
       }
-      final us = sw.elapsedMicroseconds;
-      _renderMicros += us;
-      if (us > _peakChunkMicros) _peakChunkMicros = us;
-      for (var i = 0; i < chunkFrames; i++) {
-        interleaved[2 * i] = left[i];
-        interleaved[2 * i + 1] = right[i];
+      return;
+    }
+    // Native: push until the device buffer is full (bounded iterations so a
+    // misbehaving device can't spin us forever).
+    for (var i = 0; i < 64; i++) {
+      final chunk = _pending ?? _render(work);
+      if (_stream.push(chunk) != 0) {
+        _pending = chunk; // full: retry this exact chunk next tick
+        return;
       }
-      _stream.push(interleaved);
+      _pending = null;
       _framesPushed += chunkFrames;
     }
+  }
+
+  final _left = Float32List(chunkFrames);
+  final _right = Float32List(chunkFrames);
+
+  /// Renders the next chunk as interleaved stereo.
+  Float32List _render(BandWorkload work) {
+    final sw = Stopwatch()..start();
+    if (settings.band) {
+      work.render(_left, _right);
+    } else {
+      _synth!.render(_left, _right);
+    }
+    final us = sw.elapsedMicroseconds;
+    _renderMicros += us;
+    if (us > _peakChunkMicros) _peakChunkMicros = us;
+    final interleaved = Float32List(chunkFrames * 2);
+    for (var i = 0; i < chunkFrames; i++) {
+      interleaved[2 * i] = _left[i];
+      interleaved[2 * i + 1] = _right[i];
+    }
+    return interleaved;
   }
 
   SpikeStats stats() {
@@ -195,6 +228,8 @@ class SpikeEngine {
       initResult: _initResult,
       audioSeconds: audioSeconds,
       wallSeconds: _clock.elapsedMicroseconds / 1e6,
+      // Render time over audio accepted by the device (a rejected chunk is
+      // rendered once and counted when it is accepted).
       loadPercent: audioSeconds == 0
           ? 0
           : 100 * _renderMicros / 1e6 / audioSeconds,
@@ -202,6 +237,12 @@ class SpikeEngine {
       chunkBudgetMs: chunkFrames / sampleRate * 1000,
       underruns: stat.exhaust,
       overflows: stat.full,
+      startDelayMs: kIsWeb
+          ? 0
+          : (_clock.elapsedMicroseconds / 1000 -
+                    (audioSeconds * 1000 - settings.lookaheadMs))
+                .clamp(0, double.infinity)
+                .toDouble(),
     );
   }
 }

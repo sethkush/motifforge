@@ -1,0 +1,40 @@
+name: Headless (Linux desktop)
+
+# Runs the real app on a virtual display with a virtual sound card, drives
+# the UI, records what actually comes out of the speakers and checks it for
+# silence and dropouts. See tool/headless/run_linux.sh.
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: headless-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain, virtual display and sound
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q clang cmake ninja-build pkg-config libgtk-3-dev \
+            liblzma-dev xvfb x11-utils pulseaudio pulseaudio-utils ffmpeg python3-numpy
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Run headless tests
+        run: SPIKE_SECONDS=10 tool/headless/run_linux.sh
+      - name: Summary
+        if: always()
+        run: cat build/headless/linux/summary.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: headless-linux
+          path: build/headless/linux
+          if-no-files-found: ignore

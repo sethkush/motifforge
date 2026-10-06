@@ -11,6 +11,10 @@ import 'spike_engine.dart';
 /// The automated version of this lives in integration_test/spike_test.dart.
 void main() => runApp(const SpikeApp());
 
+/// Wraps the whole app so tests can capture screenshots on platforms where
+/// the integration-test screenshot API isn't available (desktop).
+final screenshotKey = GlobalKey(debugLabel: 'screenshot');
+
 class SpikeApp extends StatelessWidget {
   const SpikeApp({super.key});
 
@@ -18,6 +22,8 @@ class SpikeApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     title: 'MotifForge audio spike',
     theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
+    builder: (context, child) =>
+        RepaintBoundary(key: screenshotKey, child: child),
     home: const SpikePage(),
   );
 }
@@ -196,7 +202,11 @@ class _SpikePageState extends State<SpikePage> {
                   '(budget ${s.chunkBudgetMs.toStringAsFixed(2)} ms)',
             ),
             _stat('Device underruns (buffer ran dry)', '${s.underruns}'),
-            _stat('Buffer-full drops', '${s.overflows}'),
+            _stat(
+              'Device start delay (estimate)',
+              '${s.startDelayMs.round()} ms',
+            ),
+            _stat('Buffer-full pushes (backpressure)', '${s.overflows}'),
           ],
           if (_benchLines.isNotEmpty) ...[
             const Divider(),

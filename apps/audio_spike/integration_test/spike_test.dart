@@ -4,6 +4,8 @@ import 'package:audio_spike/spike_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
+import 'support.dart';
+
 /// Headless on-device audio check. Plays each scenario through the real
 /// audio device for [seconds], then runs the CPU benchmark, and reports
 /// everything as JSON (printed with a `SPIKE_RESULT` prefix and handed to
@@ -27,12 +29,15 @@ void main() {
     ];
     final playback = <Map<String, Object>>[];
     final engine = SpikeEngine();
-    for (final s in scenarios) {
+    for (var i = 0; i < scenarios.length; i++) {
+      final s = scenarios[i];
       await tester.runAsync(() async {
+        mark('scenario-start', {'index': i, ...s.toJson()});
         engine.start(s);
         await Future<void>.delayed(const Duration(seconds: seconds));
         final stats = engine.stats();
         engine.stop();
+        mark('scenario-stop', {'index': i});
         playback.add(stats.toJson());
         // ignore: avoid_print
         print('SPIKE_RESULT playback ${jsonEncode(stats.toJson())}');

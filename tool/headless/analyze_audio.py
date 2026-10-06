@@ -10,9 +10,10 @@ LOG contains `SPIKE_MARK {...}` lines with epochMs timestamps.
 For each playback window (scenario-start/stop, ui-start/stop) it reports:
 - rms: overall level (catches "nothing came out");
 - sounding_s: length of the continuous sound segment that window produced;
-- dropouts: runs of digital silence >= 1 ms on both channels while playback
-  should be continuous (an underrun in the audio path writes zeros);
-- longest_gap_ms: the longest such run.
+- start_gap_ms: silence in the first 400 ms of the sound (stream start-up);
+- dropouts: later runs of digital silence >= 1 ms on both channels while
+  playback should be continuous (an underrun writes zeros);
+- longest_gap_ms: the longest such dropout.
 Exits non-zero if a window is silent or has dropouts, unless --report-only.
 """
 
@@ -69,6 +70,10 @@ def main():
     ap.add_argument("--rate", type=int, default=48000)
     ap.add_argument("--report-only", action="store_true")
     ap.add_argument("--json", help="write results here")
+    ap.add_argument("--max-start-gap-ms", type=float, default=300,
+                    help="fail if silence in the first 400 ms of a stream exceeds this")
+    ap.add_argument("--dropouts-informational", action="store_true",
+                    help="report mid-playback dropouts without failing")
     args = ap.parse_args()
 
     audio = np.fromfile(args.recording, dtype="<f4")
@@ -118,33 +123,48 @@ def main():
             ok = False
             continue
         g0, g1 = max(segments, key=lambda g: g[1] - g[0])
-        a, b = a0 + g0, a0 + g1
+        # Trim to the first and last audible sample: the segment can begin
+        # with (short) silence from before the mark.
+        audible = np.nonzero(win[g0:g1] > 1e-4)[0]
+        a, b = a0 + g0 + int(audible[0]), a0 + g0 + int(audible[-1]) + 1
         seg = level[a:b]
         runs = silent_runs(seg, rate // 1000) if continuous else []
+        # Gaps in the first 400 ms are a stream-start stall (device/server
+        # warming up); later ones are real dropouts during playback.
+        start_runs = [r for r in runs if r[0] < 0.4 * rate]
+        mid_runs = [r for r in runs if r[0] >= 0.4 * rate]
         rms = float(np.sqrt(np.mean(audio[a:b] ** 2)))
         r = {
             "window": label,
             "expected_s": round((stop_ms - start_ms) / 1000, 2),
             "sounding_s": round((b - a) / rate, 2),
             "rms": round(rms, 4),
-            "dropouts": len(runs),
-            "longest_gap_ms": round(max((n for _, n in runs), default=0) / rate * 1000, 2),
-            "first_gaps_s": [round((a + s) / rate, 3) for s, _ in runs[:5]],
+            "start_gap_ms": round(sum(n for _, n in start_runs) / rate * 1000, 1),
+            "dropouts": len(mid_runs),
+            "longest_gap_ms": round(max((n for _, n in mid_runs), default=0) / rate * 1000, 2),
+            "gaps_at_s": [round(float(s0) / rate, 3) for s0, _ in runs[:6]],
         }
-        if rms < 1e-3 or r["dropouts"]:
+        if rms < 1e-3:
+            ok = False
+        if r["start_gap_ms"] > args.max_start_gap_ms:
+            ok = False
+        if r["dropouts"] and not args.dropouts_informational:
             ok = False
         results.append(r)
 
-    print("| Window | Window s | Sounding s | RMS | Dropouts | Longest gap ms |")
-    print("|---|---|---|---|---|---|")
+    print("| Window | Window s | Sounding s | RMS | Start gap ms | Dropouts | Longest dropout ms | Gaps at (s into sound) |")
+    print("|---|---|---|---|---|---|---|---|")
     for r in results:
         if "error" in r:
-            print(f"| {r['window']} | - | - | - | - | {r['error']} |")
+            print(f"| {r['window']} | - | - | - | - | - | - | {r['error']} |")
         else:
-            print(f"| {r['window']} | {r['expected_s']} | {r['sounding_s']} | {r['rms']} | {r['dropouts']} | {r['longest_gap_ms']} |")
+            print(f"| {r['window']} | {r['expected_s']} | {r['sounding_s']} | {r['rms']} | "
+                  f"{r['start_gap_ms']} | {r['dropouts']} | {r['longest_gap_ms']} | {r['gaps_at_s']} |")
     if not results:
-        print("| (no playback windows found in log) | | | | | |")
+        print("| (no playback windows found in log) | | | | | | | |")
         ok = False
+    if args.dropouts_informational:
+        print("\nDropouts are informational here (known issue, see docs/spikes/m0-audio.md).")
     if args.json:
         with open(args.json, "w") as f:
             json.dump({"ok": ok, "windows": results}, f, indent=2)

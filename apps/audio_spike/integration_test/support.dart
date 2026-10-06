@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:audio_spike/main.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart' show Scrollable;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -74,3 +75,30 @@ void mark(String event, [Map<String, Object?> data = const {}]) {
 /// integration tests, but runAsync keeps timers and I/O honest).
 Future<void> waitReal(WidgetTester tester, Duration d) =>
     tester.runAsync(() => Future<void>.delayed(d));
+
+/// Scrolls the main list until [finder] is built and on screen, searching
+/// down first, then up. Needed on small screens, where the lazy list hasn't
+/// built rows that are off screen.
+Future<void> reveal(WidgetTester tester, Finder finder) async {
+  if (finder.evaluate().isNotEmpty) {
+    await tester.ensureVisible(finder.first);
+    await tester.pump();
+    return;
+  }
+  final scrollable = find.byType(Scrollable).first;
+  for (final delta in [200.0, -200.0]) {
+    try {
+      await tester.scrollUntilVisible(
+        finder,
+        delta,
+        scrollable: scrollable,
+        maxScrolls: 40,
+      );
+      await tester.pump();
+      return;
+    } on StateError {
+      // Not found in this direction; try the other one.
+    }
+  }
+  expect(finder, findsWidgets, reason: 'could not scroll to $finder');
+}

@@ -13,6 +13,12 @@ OUT="$ROOT/build/headless/android"
 SECS="${1:-20}"
 DEVICE="${2:-emulator-5554}"
 rm -rf "$OUT" && mkdir -p "$OUT/screenshots"
+failure_excerpt() {  # $1 = log file
+  echo '```'
+  grep -v SPIKE_MARK "$1" | grep -E -A4 "EXCEPTION CAUGHT|Expected:|could not|was not found|Error:|Exception:" | head -40
+  echo '```'
+}
+
 summary="$OUT/summary.md"
 echo "# Headless test: Android ($DEVICE)" >"$summary"
 status=0
@@ -33,19 +39,18 @@ for t in ui_test spike_test; do
     echo
     echo "## $t (flutter drive exit $rc)"
     echo
+    [ $rc -ne 0 ] && failure_excerpt "$OUT/$t.log"
   } >>"$summary"
 done
 
-python3 - "$OUT/spike_test.log" >>"$summary" <<'PY'
-import json, re, sys
+# The full report comes from the driver's response file: logcat truncates
+# long lines, so the printed SPIKE_RESULT report can be cut off.
+python3 - "$OUT/spike_test.response.json" >>"$summary" <<'PY'
+import json, sys
 try:
-    log = open(sys.argv[1], errors="replace").read()
-except FileNotFoundError:
-    sys.exit()
-m = re.search(r"SPIKE_RESULT report (\{.*\})", log)
-if not m:
+    r = json.load(open(sys.argv[1]))
+except (FileNotFoundError, ValueError):
     print("No measurement report found; see spike_test.log."); sys.exit()
-r = json.loads(m.group(1))
 print(f"{r['platform']}, {r['secondsPerScenario']} s per scenario\n")
 print("| Look-ahead ms | Stress | FX | Init | Load % | Peak chunk ms | Underruns | Start delay ms |")
 print("|---|---|---|---|---|---|---|---|")

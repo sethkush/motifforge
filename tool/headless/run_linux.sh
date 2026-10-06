@@ -48,6 +48,12 @@ pactl set-default-sink spike
 pactl unload-module module-suspend-on-idle 2>/dev/null || true
 
 status=0
+failure_excerpt() {  # $1 = log file
+  echo '```'
+  grep -v SPIKE_MARK "$1" | grep -E -A4 "EXCEPTION CAUGHT|Expected:|could not|was not found|Error:|Exception:" | head -40
+  echo '```'
+}
+
 summary="$OUT/summary.md"
 echo "# Headless test: Linux desktop" >"$summary"
 
@@ -77,6 +83,7 @@ for t in "${TESTS[@]}"; do
     echo
     grep -o 'SPIKE_RESULT playback .*' "$log" | sed 's/^SPIKE_RESULT playback /- /' || true
     echo
+    [ $rc -ne 0 ] && failure_excerpt "$log"
   } >>"$summary"
   [ $rc -ne 0 ] && status=1
   # spike_test sweeps look-ahead down to 20 ms to find the floor, so its

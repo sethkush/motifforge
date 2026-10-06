@@ -24,28 +24,33 @@ void main() {
     expect(find.text('Playing'), findsOneWidget);
     await waitReal(tester, const Duration(seconds: 4));
     await tester.pump();
+    await reveal(tester, find.text('Device underruns (buffer ran dry)'));
     expect(find.text('Average render load'), findsOneWidget);
-    expect(find.text('Device underruns (buffer ran dry)'), findsOneWidget);
     await screenshot(binding, tester, '02-playing');
 
     // Tap a note while playing (latency check button).
     mark('ui-tap-note');
+    await reveal(tester, find.text('Tap note (latency check)'));
     await tester.tap(find.text('Tap note (latency check)'));
     await waitReal(tester, const Duration(milliseconds: 500));
 
     // Turn the band off: only tapped notes should sound.
+    await reveal(tester, find.text('Band pattern'));
     await tester.tap(find.text('Band pattern'));
     await tester.pump();
     mark('ui-band-off');
     await waitReal(tester, const Duration(seconds: 1));
+    await reveal(tester, find.text('Tap note (latency check)'));
     await tester.tap(find.text('Tap note (latency check)'));
     mark('ui-tap-note-solo');
     await waitReal(tester, const Duration(seconds: 1));
+    await reveal(tester, find.text('Band pattern'));
     await tester.tap(find.text('Band pattern'));
     mark('ui-band-on');
     await waitReal(tester, const Duration(seconds: 2));
 
     // Stop.
+    await reveal(tester, find.text('Stop'));
     await tester.tap(find.text('Stop'));
     await tester.pump();
     mark('ui-stop');
@@ -53,6 +58,7 @@ void main() {
     await screenshot(binding, tester, '03-stopped');
 
     // Settings that only apply when stopped are enabled again.
+    await reveal(tester, find.text('Reverb + chorus (applies on restart)'));
     final fxSwitch = tester.widget<SwitchListTile>(
       find.widgetWithText(
         SwitchListTile,
@@ -62,6 +68,7 @@ void main() {
     expect(fxSwitch.onChanged, isNotNull);
 
     // CPU benchmark through the button.
+    await reveal(tester, find.text('Run CPU benchmark'));
     await tester.tap(find.text('Run CPU benchmark'));
     await tester.pump();
     for (
@@ -74,20 +81,14 @@ void main() {
     }
     expect(find.text('Run CPU benchmark'), findsOneWidget);
     // The list is lazy: scroll to the last benchmark line to prove all 8 ran.
-    await tester.scrollUntilVisible(
+    await reveal(
+      tester,
       find.textContaining('band + 64 stress voices (no fx)'),
-      300,
-      scrollable: find.byType(Scrollable).first,
     );
-    await tester.pump();
     await screenshot(binding, tester, '04-benchmark');
 
     // Copy results (scroll back up to the buttons first).
-    await tester.scrollUntilVisible(
-      find.text('Copy results'),
-      -300,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await reveal(tester, find.text('Copy results'));
     await tester.tap(find.text('Copy results'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));

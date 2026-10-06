@@ -113,6 +113,19 @@ cases:
   - {spec: {degree: 5, type: 7, inversion: 3}, symbol: G7/F, roman: V42}
 ```
 
+```conformance
+id: chords.inversion-labels-observed
+kind: chord
+status: observed
+source: "review screenshot: progression I I6 IV vi64 ii IV Vsus4 V and V6/vi"
+key: C major
+cases:
+  - {spec: {degree: 1, inversion: 1}, symbol: C/E, roman: I6}
+  - {spec: {degree: 6, inversion: 2}, symbol: Am/E, roman: vi64}
+  - {spec: {degree: 5, sus: 4}, symbol: Gsus4, roman: Vsus4}
+  - {spec: {degree: 6, applied: V, inversion: 1}, symbol: "E/G#", roman: V6/vi}
+```
+
 ## Embellishments
 
 - **CH-11** (observed, from screenshots) Palette groups: **Type** 5 / 7 / 9 /

@@ -1,0 +1,57 @@
+name: Pages
+
+# Publishes the web build (an installable PWA) to GitHub Pages:
+#   https://<owner>.github.io/<repo>/audio-spike/
+# One-time setup: repo Settings → Pages → Source: "GitHub Actions".
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Build audio spike (web, Wasm + JS fallback)
+        working-directory: apps/audio_spike
+        run: >
+          flutter build web --wasm --no-web-resources-cdn
+          --base-href "/${{ github.event.repository.name }}/audio-spike/"
+      - name: Assemble site
+        run: |
+          mkdir -p _site/audio-spike
+          cp -r apps/audio_spike/build/web/. _site/audio-spike/
+          cat > _site/index.html <<'EOF'
+          <!doctype html><meta charset="utf-8">
+          <title>MotifForge</title>
+          <h1>MotifForge</h1>
+          <ul><li><a href="audio-spike/">Audio spike (M0 test app)</a></li></ul>
+          EOF
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

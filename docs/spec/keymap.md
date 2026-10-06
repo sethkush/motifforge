@@ -23,7 +23,8 @@ for UI actions.
 | `Shift+Up` / `Shift+Down` | Selected notes up/down an octave | melody | documented |
 | `.` / `,` | Raise / lower selected notes a half step | melody | documented |
 | `Shift+Left` / `Shift+Right` | Extend selection one item | both | documented |
-| `h` `j` `k` `l` `;` `'` `b` | Entry duration ¼, ½, 1, 2, 4 beats, longer, longer | both | documented |
+| `h` `j` `k` `l` `;` `'` `b` | Entry duration ¼, ½, 1, 2, then the largest that fits (3 or 4), then two longer values | both | documented (5th value observed) |
+| `Shift` + duration key | Add to the current duration (ADD) | both | observed (ladder label "ADD (⇧)"), behaviour assumed |
 | `/` | Toggle split mode | both | documented |
 | `t` | Tie selected | both | documented |
 | `i` | Cycle inversion | chord | documented |

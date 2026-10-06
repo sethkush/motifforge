@@ -89,11 +89,18 @@ cases:
   rows are spaced by the real intervals and chromatic notes have their own
   row.
 
+- **DI-10a** (observed) The melody staff grows to show the octave rows
+  that contain notes, repeating the row labels (… 2 D, 1 C, 7 B, 6 A …).
+  The tonic row label is highlighted.
+
 ## Chord compatibility guides
 
 - **DI-11** (documented) When on, each melody row is tinted under a chord
   only if that degree is a tone of the chord; other rows are white, showing
   at a glance which melody notes are stable over each chord.
+
+- **DI-11a** (observed, tablet) The note palette marks the chord tones of
+  the chord at the cursor with dots under those degree buttons.
 
 ## Inactive voices
 

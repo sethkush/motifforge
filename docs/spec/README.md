@@ -12,6 +12,7 @@ implementers work from these specs, never from Hookpad's code, text or assets
 | [structure.md](structure.md) | Measures, keys and scale changes, meter, tempo, looping, line breaks |
 | [display.md](display.md) | Colour schemes, primary labels, staff spacing, chord compatibility guides |
 | [keymap.md](keymap.md) | Default keyboard bindings |
+| [layout.md](layout.md) | Where everything sits on screen (desktop and tablet) |
 
 ## Rules and sources
 

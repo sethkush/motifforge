@@ -59,7 +59,7 @@ These are expressive works, so they are protected:
 ### 0.5 Source material still needed
 The guide doesn't cover everything. To reach full parity we need:
 1. The **keyboard shortcuts page**, which is separate from the guide.
-2. **Current Hookpad UI captures** of every screen: main view, every palette state, every dialog, every menu, the settings panel, and mobile/tablet layouts. The guide's screenshots mix the classic UI and the Hookpad 2 UI. We target the current one.
+2. **Current Hookpad UI captures** of every screen. Partly covered: the guide's screenshots and a published review are distilled into `docs/spec/layout.md`. Still missing:: main view, every palette state, every dialog, every menu, the settings panel, and mobile/tablet layouts. The guide's screenshots mix the classic UI and the Hookpad 2 UI. We target the current one.
 3. The **undocumented panels**: Aria, Guides, Metrics, Sections, Chord Chart, Mix.
 4. **Content lists**: sound names and categories, band templates, harmony/bass/drum style names, the progressions list, the scope of chord search. We recreate the content itself.
 5. A sample **"Save To Disk" file**, and clipboard payloads that cover chords, accidentals, triplets and voices.
@@ -192,7 +192,7 @@ A lyrics panel splits text into syllables automatically and places one per melod
 1. **Full parity** with everything in §1, including Aria, Guides, Metrics, cloud projects and sharing, and a community song-analysis library. Each has an open equivalent; the only things we don't ship are the protected items in §0.2.
 2. **Same muscle memory**: identical default shortcuts and layout. Users can remap keys, but the defaults match Hookpad.
 3. **Interoperability**: read and write Hookpad's clipboard JSON, import "Save To Disk" files, and import and export MIDI and MusicXML.
-4. **Platforms**: Web (like Hookpad), macOS, Windows, Linux, iPadOS and Android tablets, with a phone layout later. Works fully offline; the cloud is optional.
+4. **Platforms**: **Android first** (owner's priority), then Web as an installable PWA (as Hookpad is), macOS, Windows, Linux and iPadOS, with a phone layout. Works fully offline; the cloud is optional.
 5. **Everything open**: code, sounds (CC0/CC-BY), styles, drum patterns, progressions and suggestion models are open data that the community can extend.
 
 ---

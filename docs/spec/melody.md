@@ -96,10 +96,16 @@ cases:
 ## Durations
 
 - **MEL-12** (documented) The entry-duration keys are `h j k l ; ' b`. The
-  first five are ¼, ½, 1, 2 and 4 beats. `'` and `b` are longer values
-  (exact lengths unknown, see open questions). Only durations that fit in
-  the current meter's measure are offered; in a 12-beat meter all seven are
-  available, in 4 beats only `h`–`;`.
+  first four are ¼, ½, 1 and 2 beats. `'` and `b` are longer values (exact
+  lengths unknown, see open questions). Only durations that fit in the
+  current meter's measure are offered; in a 12-beat meter all seven are
+  available, in 4 beats only `h`–`;`. (observed) The fifth value (`;`) read 4
+  in a 4-beat meter and 3 in a 3-beat meter. (assumed) It is the largest
+  value that fits the measure.
+- **MEL-12a** (observed) Under the ladder is **ADD (⇧)**. (assumed) Holding
+  Shift while choosing a duration adds it to the current entry duration
+  instead of replacing it (a tablet capture showed "Duration: 2.25", i.e.
+  2 + ¼).
 - **MEL-13** (documented) Duration buttons can also be clicked.
 - **MEL-14** (documented) Dragging a note's edge resizes it. Each edge has
   two zones:
@@ -195,7 +201,9 @@ cases:
   muted independently.
 - **MEL-24** (documented) Inactive voices are drawn in one of three styles:
   translucent (default), solid, or outlined with a per-voice colour (voice 1
-  red, 2 orange, 3 yellow, 4 green). Backtick cycles the style.
+  red, 2 orange, 3 yellow, 4 green). Backtick cycles the style. (observed)
+  One capture showed Outlined selected, probably a user choice; the guide
+  names Translucent as the default.
 
 ## Triplets
 
@@ -215,6 +223,9 @@ cases:
 ```
 
 ## Open questions
+
+- Whether ADD accumulates only with Shift held, or toggles a mode (the
+  tablet has no Shift key).
 
 - Exact lengths for the `'` and `b` duration keys, and which meters offer them.
 - Whether Backspace with no selection deletes the note or shortens the gap in

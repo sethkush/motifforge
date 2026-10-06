@@ -1,19 +1,69 @@
 # MotifForge — Project Plan
 
-MotifForge is an open-source, cross-platform (Flutter/Dart) songwriting tool in
-the spirit of Hooktheory's Hookpad: you write melodies and chords as **scale
-degrees and Roman numerals** rather than absolute pitches, hear them played
-back by an auto-arranged band, and export to MIDI, notation and audio.
+MotifForge aims to be a **feature-for-feature, behaviour-for-behaviour clone of
+Hooktheory's Hookpad**, built in Flutter/Dart. "Same" covers the workflow,
+layout, keyboard shortcuts, entry rules and musical results. The code,
+artwork, sounds, text, data and names are all made independently. You write
+melodies and chords as **scale degrees and Roman numerals**, hear them played
+by an auto-arranged band, and export to MIDI, notation and audio.
 
-This plan is built from the Hookpad User Guide (v2.1.0). Section 1 is an
-inventory of everything that guide describes, written in our own words. The
-rest of the plan covers how we build it.
+Sources: the Hookpad User Guide (v2.1.0) and the screenshots in it. §0 covers
+how we can clone as closely as the law allows. §1 lists every feature the
+guide describes, in our own words.
 
-> **Clean-room rule.** We copy *behaviour*, not *assets or text*. Don't put
-> Hooktheory's name, logo, UI artwork, sound samples, guide text or TheoryTab
-> data into this repo. Everything in `docs/` is paraphrased. Musical ideas such
-> as scale degrees, Roman numerals and colour-coding by degree are common
-> knowledge and free to use.
+---
+
+## 0. Parity target and legal boundaries
+
+**Target:** a Hookpad user can sit down at MotifForge and work from the same
+muscle memory: same screen layout, same shortcuts, same entry behaviour, same
+playback results. They can also bring their work across.
+
+> Not legal advice. Before a public release, have a lawyer review the points
+> below, particularly the visual design and the naming.
+
+### 0.1 What we replicate
+Functional elements, which copyright generally doesn't protect:
+* **Features, workflows and behaviour**: entry rules, edge-drag behaviour, Smart Octave, voicing rules, drum-region logic, and so on.
+* **UI layout and information architecture**: toolbar order, palette positions, how the staffs are stacked, which dialogs exist and what they contain.
+* **Keyboard shortcuts and menu structure.**
+* **Colour-coding by scale degree**, which does a functional job. We keep the same hue order and choose our own exact colour values.
+* **Data formats, for interoperability**: Hookpad's clipboard JSON, and its "Save To Disk" file if we can get sample files.
+
+### 0.2 What we make ourselves
+These are expressive works, so they are protected:
+
+| Hookpad has | MotifForge uses |
+|---|---|
+| Source code | Written from scratch from our own specs. We never read or decompile Hookpad's client JS. |
+| Logo, icons, illustrations | Our own icons, or an open icon set (Lucide, Material Symbols) |
+| Fonts | OFL-licensed fonts, e.g. a libre serif for Roman numerals |
+| Instrument samples | CC0 / CC-BY samples (e.g. Salamander Grand Piano, VSCO 2 CE, CC0 drum kits) packed as SF2/SF3 |
+| Style and drum patterns, templates | Programmed by us. Generic rhythms are fine, but we don't transcribe theirs note for note. |
+| Help text, tooltips, tutorials, videos | Written and recorded by us |
+| TheoryTab database | Open corpora plus our own community library (§3.9, M9) |
+| The Aria AI model | Our own model, trained on open data |
+| Names: Hookpad, Hooktheory, TheoryTab, Aria, Magic Chord | Our own names, e.g. "Suggest Chord" and "Song Library" |
+
+### 0.3 Risk notes
+1. **Look and feel.** Copying layout and behaviour is low risk. A pixel-identical skin (exact colours, typography, chrome) raises trade-dress and unfair-competition risk. So: same layout, our own visual styling.
+2. **Trademarks.** Don't use their names in the app name, icon or store listing. Saying "imports from Hookpad" or "works like Hookpad" is normally fine as nominative use.
+3. **Terms of service.** We use Hookpad only as an ordinary user. No decompiling, no scraping TheoryTab, no calling their private APIs.
+4. **Patents.** Search for patents held by Hooktheory before release. This hasn't been checked yet.
+
+### 0.4 Clean-room process
+* **Specs.** People write behaviour specs in `docs/spec/<area>.md`, in their own words, from the public guide and from using Hookpad normally (screenshots and screen recordings). Every rule comes with **conformance cases**: a starting state, an input sequence, and the expected result.
+* **Tests.** Conformance cases become automated tests in `test/conformance/`. A parity dashboard shows the pass rate per area.
+* **The rule** is "never copy their code, text or assets", not "different people must write the spec and the code". A small team can do both.
+
+### 0.5 Source material still needed
+The guide doesn't cover everything. To reach full parity we need:
+1. The **keyboard shortcuts page**, which is separate from the guide.
+2. **Current Hookpad UI captures** of every screen: main view, every palette state, every dialog, every menu, the settings panel, and mobile/tablet layouts. The guide's screenshots mix the classic UI and the Hookpad 2 UI. We target the current one.
+3. The **undocumented panels**: Aria, Guides, Metrics, Sections, Chord Chart, Mix.
+4. **Content lists**: sound names and categories, band templates, harmony/bass/drum style names, the progressions list, the scope of chord search. We recreate the content itself.
+5. A sample **"Save To Disk" file**, and clipboard payloads that cover chords, accidentals, triplets and voices.
+6. The exact durations for the `'` and `b` keys, and the edge cases around them.
 
 ---
 
@@ -25,7 +75,7 @@ rest of the plan covers how we build it.
 | Note entry | Click in the melody staff, then type `1`–`7` to add scale degrees (`0` = rest). Backspace/Delete removes notes like a text editor does. |
 | Octave placement | **Smart Octave** (default) places a new note in the octave closest to the previous note. When it's off, the note goes in the same octave as its neighbour. Holding ↑/↓ while typing a digit forces the octave above/below. 5 octaves are supported. |
 | Selection | Rubber-band box, Ctrl/Cmd-click, Shift-click, Shift+←/→. |
-| Pitch edit | Drag vertically, or ↑/↓ to step through the scale. Shift+↑/↓ moves a whole octave. There are also Raise/Lower buttons. |
+| Pitch edit | Drag vertically, or ↑/↓ to step through the scale. Shift+↑/↓ moves a whole octave. There are also Raise/Lower buttons (step, half step, octave). |
 | Duration | Drag a note edge. From the *outer* edge the neighbour resizes with it. From the *inner* edge the note eats into its neighbour. In Text mode, Alt-drag pushes or pulls every following note. Keys `h j k l ; ' b` choose the entry duration (¼, ½, 1, 2, 4 beats, plus longer values); which ones are available depends on the meter. |
 | Split / tie | `/` toggles split mode (click to cut a note). `t` ties selected adjacent notes that have the same pitch. |
 | Accidentals | `.` raises and `,` lowers by a half step. Holding either key while typing a digit enters the note already altered. |
@@ -35,7 +85,7 @@ rest of the plan covers how we build it.
 ### 1.2 Chords
 | Feature | Behaviour |
 |---|---|
-| Entry | Type `1`–`7` in the chord staff to add diatonic chords; Backspace deletes. |
+| Entry | Type `1`–`7` in the chord staff to add diatonic chords; Backspace deletes. The palette also has a rest slot (`0`) and a magic/★ slot (`8`). |
 | Selection / move | Drag in an empty area or along a chord's top/bottom edge to select a range. Dragging from a chord's middle moves it. Ctrl/Shift-click and Shift+arrows also select. |
 | Duration / split / tie | Same as notes. Tie needs adjacent chords with the same root. |
 | Inversion | Root, 1st, 2nd, and 3rd (7th chords only). `i` cycles through them. Shown as figured bass: none, ⁶, ⁶₄, ⁷, ⁶₅, ⁴₃, ⁴₂. |
@@ -43,32 +93,32 @@ rest of the plan covers how we build it.
 | Sus | sus2, sus4 |
 | Add / omit | add4, add6, add9, no3, no5 |
 | Alterations | ♭5, ♯5, ♭9, ♯9, ♯11, ♭13 (enabled only where they make sense) |
-| Applied (secondary) | V of, IV of, vii° of. You pick the function, then type the target chord. For example, "V of" + `2` gives V/ii. |
-| Borrowed | Pick a parallel mode from a dropdown and the chord is built from that mode's scale on the same tonic. |
+| Applied (secondary) | V of, IV of, vii° of (`d` shortcut). You pick the function, then type the target chord. For example, "V of" + `2` gives V/ii. |
+| Borrowed | Pick a parallel mode from a dropdown and the chord is built from that mode's scale on the same tonic. The non-diatonic panel's shortcut is `n`. |
 | Sticky palette | When nothing is selected, palette settings apply to the *next* chord you enter. |
 | Labels | Roman numeral is the primary label and the absolute chord name is secondary. A setting swaps them. |
-| Magic Chord | Suggests the next chord at the cursor, ranked by how often it follows the preceding chords in a song corpus. |
+| Magic Chord / Magic Bass | Suggests the chord (or bass) at the cursor, ranked by how often it follows the preceding chords in the TheoryTab song database. |
 | Other smart tools | Popular chords in the current key; chord search by name; **Tone sets** (chords containing chosen notes); **Bass sets** (alternative chords over the same bass note); **Progressions** (insert common progressions). |
 
 ### 1.3 Song structure
 | Feature | Behaviour |
 |---|---|
-| Measures | The song grows automatically as you write. You can add N measures before or after a selection, select measures from the bar above the staff, and delete several at once. |
+| Measures | The song grows automatically as you write. You can add N measures before or after a selection, select measures from the bar above the staff, and delete several at once. A handle at the end of the song (and +/− buttons) adds or removes measures. The measure bar invites you to "drag to add measures, key/meter/band/tempo changes". |
 | Key / scale | The default is C major. Tonic is picked on a circle of fifths. Scales: Major, Minor, Dorian, Phrygian, Lydian, Mixolydian, Locrian, Harmonic Minor, Phrygian Dominant. |
-| Scale change type | **Parallel** (default) keeps degrees and changes pitches: I in C major becomes i in C minor. **Relative** keeps pitches and changes degrees: C major → A minor, so I becomes III. |
+| Scale change type | **Parallel** (default) keeps degrees and changes pitches: I in C major becomes i in C minor. **Relative** keeps pitches and changes degrees: C major → A minor, so I becomes III. In Relative mode the tonic picker is greyed out. |
 | Key changes | Placed at a measure and shown as flags. |
 | Meter | 2, 3, 4, 5, 6, 9 or 12 beats per measure. Compound meters (3/6/9/12) have a "beat unit = 3" option where 3 beats are felt as one, and tempo follows it. Meter changes apply to a measure range, until the next change, or to the end of the song. They show as flags you can select and delete. |
 | Tempo | Slider, tap tempo (`q`), swing checkbox, tempo changes. |
 | Band changes | Instrumentation can change at a measure. |
-| Sections | Named sections such as "Verse 1". Lyrics are organised by section. |
+| Sections | Named sections such as "Verse 1", shown above the measure bar. Lyrics are organised by section. |
 | Line breaks | 8 measures per line by default. Enter forces a break. Settings: N per line, auto-fit to window, one long line, or manual breaks only. |
 | Looping | A loop bar above the staff; click it to enable or disable. |
 
 ### 1.4 Band, playback and sound
 * **Tracks** have a *type* (lead1–4, harmony, bass, drums), a *sound*, a *volume* and an *octave*. Lead octave is ±1 in steps. For harmony and bass it is a continuous voicing centre, measured in octaves.
-* You can add, remove and mute tracks. The sound list is filtered by track type and grouped into categories (Piano, Orchestral, Vocals, Synth, Plugged Synth, Percussive…).
-* **Band templates** come built in, and users can save their own. Applying one replaces the current band.
-* There are **7 playback channels**: 4 leads, harmony, bass and drums. Each can be muted.
+* You can add, remove and mute tracks. The sound list is filtered by track type and grouped into categories (Piano, Orchestral, Vocals, Synth, Plugged Synth, Percussive…). The band dialog has three columns: Templates | Band Tracks | Sounds.
+* **Band templates** come built in, and users can save their own. Applying one replaces the current band, after a confirmation. In the free tier, band edits revert when the project is saved; we have no paywall, so we leave that out.
+* There are **7 playback channels**: 4 leads, harmony, bass and drums. Each can be muted from the volume menu.
 * **Harmony styles** set the rhythm and voicing. The default is a right-hand piano chord on every beat. Some styles are meter-aware (e.g. a bossa piano). Voicings use 3 notes: chords with more than 3 notes drop the bass, so you need a bass track to hear the inversion. The voicing is centred on the octave slider (+⅓ octave turns C-E-G into E-G-C).
 * **Guitar voicing**: open position when there's a common shape, otherwise an E- or A-shape barre at the lowest fret. Distorted sounds play 2-string power chords; for inversions they voice the first interval (G/B → B-G).
 * **Bass styles**: the default is a dotted rhythm on the chord's bass note. Others (e.g. bossa bass) walk through chord tones and adapt to the meter.
@@ -82,10 +132,10 @@ rest of the plan covers how we build it.
 * Click track, master volume, and a record button for real-time MIDI input.
 
 ### 1.5 Audio tracks
-Import WAV or MP3. A dialog asks for the clip's BPM and meter (with tap tempo) and can auto-add measures. You insert the clip at the start, at the cursor, or after the previous clip, then drag to move it. The bottom corner resizes the clip and the top corner loops it. Controls: lane zoom, waveform zoom, sync offset (fine and coarse nudges), volume, mute, solo, loop, split, delete. There's also a "delete unused files" command.
+Import WAV or MP3 by drag-and-drop or File → Import Audio File. A dialog asks for the clip's BPM and meter (with tap tempo) and can auto-add measures. You insert the clip at the start, at the cursor, or after the previous clip, then drag to move it. The bottom corner resizes the clip and the top corner loops it. Controls: lane zoom, waveform zoom, sync offset (`<<< << < > >> >>>` nudges), volume, mute, solo, loop, split, delete. There's also a "delete unused files" command.
 
 ### 1.6 Export
-Each export covers the whole song, or just the selected measures.
+Each export covers the whole song (File → Export), or just the selected measures (Export button in the measure panel).
 * **Score PDF**: a melody staff plus a 2-staff piano harmony part. It spells notes for the key (♯2 → D♯ in C, not E♭).
 * **Guitar tab PDF** with fingerings for chords and melody.
 * **Lead sheet PDF**.
@@ -93,7 +143,7 @@ Each export covers the whole song, or just the selected measures.
 * **MP3**.
 
 ### 1.7 Settings
-* **Entry mode**: *Table* (default) overwrites and allows gaps. *Text* inserts, pushing later notes along, and fills gaps with rests.
+* **Entry mode**: *Table* (default) overwrites and allows gaps. *Text* inserts, pushing later notes along, and fills gaps with rests. The toggle is in the top-right corner.
 * **Primary labels**: Roman numerals or absolute names.
 * **Colour scheme**:
   * *Diatonic-centric*: colours rotate with the mode, so relative keys share colours.
@@ -107,30 +157,43 @@ A lyrics panel splits text into syllables automatically and places one per melod
 * `-` forces a split inside a word. A single trailing dash keeps the word as one syllable.
 * `_` skips a note and `_3_` skips three.
 * In the editor, Tab inserts a "skip N notes" box; adjust it with `+`/`-`.
-* Lyrics are per section and per voice.
+* Lyrics are per section and per voice. The panel shows a note count for each section.
 
 ### 1.9 Input, sync, editing
 * **MIDI controller**: a played pitch is converted to a scale degree in the current key (step entry). In **record mode** you play in time and the notes are quantised.
-* **YouTube sync**: attach a URL, then set start and end markers with `[` and `]` while it plays (the span must be a whole number of measures). A "test the sync" mode follows along, `p` plays or pauses the video, and markers can be nudged. Used for transcription.
-* **Clipboard**: `c`/`v` (with or without Ctrl/Cmd) copy and paste. "Paste from clipboard" works across projects using a JSON payload like `{"notes":[{"sd":"1","octave":0,"beat":1,"duration":1,"isRest":false}],"chords":[],"fp":"…"}`.
+* **YouTube sync**: attach a URL, then set start and end markers with `[` and `]` while it plays (the span must be a whole number of measures). A "test the sync" mode follows along, `p` plays or pauses the video, and markers can be nudged. Used for transcription, and leads into "add my analysis to TheoryTab".
+* **Clipboard**: `c`/`v` (with or without Ctrl/Cmd) copy and paste. "Paste from clipboard" works across projects using a JSON payload like `{"notes":[{"sd":"1","octave":0,"beat":1,"duration":1,"isRest":false}],"chords":[],"fp":"…"}`. Browsers that can't read the clipboard get a fallback paste box.
 * **Undo/redo**: `z`/`y`, 20 levels.
 
-### 1.10 Shown in the UI but not documented in the guide (stretch / out of scope)
-"Aria" (AI assistant, beta), "Guides", "Metrics", TheoryTab publishing, accounts and activation. The first three are stretch goals. We won't build TheoryTab publishing or accounts.
+### 1.10 UI chrome visible in the screenshots
+* **Hookpad 2 header**:
+  * Left: Meter, Key, Tempo, Band, Lyrics, Sections
+  * Centre: Aria (beta)
+  * Right: Guides, YouTube, Audio Track, Metrics
+  * Also zoom and horizontal zoom (−/+), the song title, and the entry-mode toggle.
+* **Transport**: Play (Space), Record, Loop, Click, Volume, Mix (`m`), Open (`o`), Save (`s`), Export, Chord Chart, Settings.
+* **Menus**:
+  * File: New `n`, Open `o`, Save `s`, Save As, Export ▸ (Score/Tab/Lead/MIDI/MP3), Open From Disk, Save To Disk, Import Audio File
+  * Edit: Undo `z`, Redo `y`, Cut `x`, Copy `c`, Paste `v`, Paste From Clipboard, Delete `del`
+  * Also MIDI, Settings, Help
+* **Palette area** (sits under the header and changes with the staff the cursor is in):
+  * Duration ladder (h j k l ; ' b, Add/Split/Tie)
+  * "Add a note (1–7, 0)" or "Add a chord in C Major" swatches showing the absolute name and the key hint
+  * Raise/Lower/Octave/Half-step buttons
+  * Voice / Visible / Play / Inactive-coloring panel
+  * Chord groups: Type (e), Inv (i), Sus, Add/Omit, Alter, Sec (d), Borrow
+* **Account features** (out of scope as a service; see M8 for our equivalent): login, cloud project list, activation and paywall, TheoryTab transfer.
+* **Undocumented, need captures**: Aria, Guides, Metrics, Chord Chart, Mix panel.
 
 ---
 
-## 2. Product goals and non-goals
+## 2. Goals
 
-**Goals**
-1. Keyboard-first and fast. The full song-writing loop works without the mouse.
-2. Same theory depth as Hookpad: all 9 scales, embellishments, borrowed and applied chords.
-3. Runs offline on Web, macOS, Windows, Linux, iPadOS and Android tablets. Phones get a reduced layout later.
-4. Open, documented file format, plus MIDI and MusicXML in and out, so users are never locked in.
-5. Extensible content: sounds, harmony and bass styles, drum patterns and progressions are data files the community can contribute to.
-
-**Non-goals (for v1)**
-Accounts or cloud sync, a social or TheoryTab-style database, YouTube publishing workflows, and a full DAW (mixing, effects, audio recording).
+1. **Full parity** with everything in §1, including Aria, Guides, Metrics, cloud projects and sharing, and a community song-analysis library. Each has an open equivalent; the only things we don't ship are the protected items in §0.2.
+2. **Same muscle memory**: identical default shortcuts and layout. Users can remap keys, but the defaults match Hookpad.
+3. **Interoperability**: read and write Hookpad's clipboard JSON, import "Save To Disk" files, and import and export MIDI and MusicXML.
+4. **Platforms**: Web (like Hookpad), macOS, Windows, Linux, iPadOS and Android tablets, with a phone layout later. Works fully offline; the cloud is optional.
+5. **Everything open**: code, sounds (CC0/CC-BY), styles, drum patterns, progressions and suggestion models are open data that the community can extend.
 
 ---
 
@@ -146,21 +209,26 @@ motifforge/
 │  ├─ motif_core/               # song model, edits, undo, (de)serialisation
 │  ├─ motif_engine/             # song + band  → timed note events
 │  ├─ motif_audio/              # synth + audio output + transport (Flutter plugin deps)
-│  ├─ motif_io/                 # MIDI / MusicXML / WAV / MP3 / PDF / clipboard
-│  └─ motif_suggest/            # Magic Chord model, tone/bass sets, progressions
+│  ├─ motif_io/                 # MIDI / MusicXML / WAV / MP3 / PDF / clipboard / Hookpad import
+│  ├─ motif_suggest/            # chord suggestions, tone/bass sets, progressions, AI co-writer client
+│  └─ motif_cloud_client/       # optional sync / sharing client (M8)
 ├─ apps/
 │  └─ motifforge/               # Flutter UI
+├─ server/                      # optional self-hostable backend (M8–M9)
 ├─ assets/
-│  ├─ soundfonts/               # permissively-licensed SF2/SF3
-│  ├─ styles/                   # harmony/bass style definitions (YAML/JSON)
-│  ├─ drums/                    # drum pattern definitions
+│  ├─ soundfonts/               # CC0/CC-BY SF2/SF3
+│  ├─ styles/                   # harmony/bass style definitions
+│  ├─ drums/                    # drum kit pattern definitions
+│  ├─ templates/                # band templates
 │  └─ models/                   # chord n-gram tables
-└─ docs/
+├─ docs/
+│  ├─ PLAN.md
+│  └─ spec/                     # clean-room behaviour specs + conformance cases
+└─ tool/                        # corpus pipelines, SF3 packing, spec→test generator
 ```
 
 Everything below `motif_audio` is **pure Dart**. Theory, model, engine and IO
-can therefore be unit-tested quickly without Flutter, and reused in a CLI or
-server later.
+can therefore be unit-tested quickly without Flutter, and reused on the server.
 
 ### 3.2 Time representation
 * A song is a flat timeline in **ticks**, with `ticksPerBeat = 480`. 480 divides by 3 (triplets) and by 16 (quarter-beat entry), and it matches common MIDI PPQ, so MIDI export needs no rescaling.
@@ -180,7 +248,7 @@ class Song {
   List<Section> sections;           // name + measure range
   Set<int> lineBreaks;
   LoopRange? loop;
-  List<Voice> voices;               // exactly 4
+  List<Voice> voices;               // exactly 4, each with notes + lyrics
   List<ChordEvent> chords;
   List<AudioClip> audioClips;
   YouTubeSync? youtube;
@@ -213,11 +281,10 @@ Because notes and chords are stored *relative to the key*, the parallel and
 relative scale changes (§1.3) are simple model transforms.
 
 **Edits.** Every user action is a pure function `Song → Song`, wrapped in a
-`Command` that records a label for the undo menu. Undo/redo is a persistent
-stack of `Song` snapshots; structural sharing keeps that cheap. We'll allow
-more than Hookpad's 20 levels (default 200). Edits are written against an
-`EditContext` that carries the entry mode (Table or Text), Smart Octave and
-the current palette settings.
+`Command` with a label for the undo menu. Undo/redo is a persistent stack of
+`Song` snapshots. For parity the default depth is **20**, with a setting to
+raise it. Edits are written against an `EditContext` that carries the entry
+mode (Table or Text), Smart Octave and the current palette settings.
 
 ### 3.4 Theory (`motif_theory`)
 * `Scale` holds a semitone pattern per mode:
@@ -227,20 +294,19 @@ the current palette settings.
 * `resolveNote(note, key) → MidiPitch`, plus `spell(note, key) → NoteName`. Spelling is degree-based, so ♯2 in C is D♯ and never E♭.
 * `ChordSpec → ChordTones` builds the chord in these steps:
   1. Choose the source scale: the borrowed scale if set, otherwise the key's scale.
-  2. For applied chords, find the target root, then build V, IV or vii° in the target's major (or harmonic minor) context.
+  2. For applied chords, find the target root, then build V, IV or vii° in the target's context.
   3. Stack thirds up to the chosen type.
   4. Apply sus (replaces the 3rd), adds, omits and alterations.
   5. Pick the bass note from the inversion.
 * `romanNumeral(chord, key)` handles case by quality, `°`, `ø`, `+`, figured bass, the `/x` suffix for applied chords and a borrowed-chord marker. `chordName()` gives absolute names (`Cmaj7/E`).
 * `degreeColor(degree, scale, scheme)`:
-  * *Diatonic-centric*: rotate the 7-colour wheel by the mode's offset from Ionian. Harmonic minor and Phrygian dominant use their parent modes (Aeolian and Phrygian).
+  * *Diatonic-centric*: rotate the 7-colour wheel (red, orange, yellow, green, blue, purple, pink) by the mode's offset from Ionian. Harmonic minor and Phrygian dominant use their parent modes.
   * *Major-centric*: compare the pitch to the major scale and return a stripe pair when it sits in between.
-* `relativeTonic(fromKey, toScale)` returns the new tonic for relative changes. Note that harmonic minor and Phrygian dominant have no exact relative major; we map them via their parent mode and document the rule.
+* `relativeTonic(fromKey, toScale)` returns the new tonic for relative changes. Harmonic minor and Phrygian dominant have no exact relative scale; their behaviour must be checked against Hookpad and captured as conformance cases.
 * `smartOctave(prevPitch, degree)` and the guitar shape finder (open, then E/A barre, then power chord) also live here. The shape finder is shared by playback and the tab export.
 
 Test approach: table-driven. Every scale × degree × embellishment combination
-has its expected pitches, name and Roman numeral. This is the
-highest-leverage test suite in the project.
+has its expected pitches, name and Roman numeral.
 
 ### 3.5 Arrangement engine (`motif_engine`)
 `render(Song, range) → List<PerformanceEvent>` (tick, channel, pitch, velocity, duration). It's deterministic and pure.
@@ -254,160 +320,171 @@ highest-leverage test suite in the project.
     "*": [{beat: every, length: 1}]
   ```
   The voicing algorithm places the chord tones closest to the track's continuous octave centre and keeps voice-leading between chords smooth. Guitar sounds go through the shape finder instead.
-* **Bass styles** work the same way: a per-meter rhythm plus a note-selection rule (root, chord bass, walking through chord tones).
-* **Drums**: a `DrumKit` holds `start`, `groove`, `fill1`, `fill2`, `break` and `pickup` bars per meter. Region logic follows §1.4 (fill every 8 bars, alternating fills, a pickup that looks ahead to the next region's kit).
-* Swing (delaying off-beat 8ths) and the click track are added here.
+* **Bass styles** work the same way: a per-meter rhythm plus a note-selection rule.
+* **Drums**: a `DrumKit` holds `start`, `groove`, `fill1`, `fill2`, `break` and `pickup` bars per meter. Region logic follows §1.4.
+* Swing and the click track are added here.
 
-Snapshot tests check `song.json → events.json`.
+For parity we aim to match Hookpad's style catalogue one for one: the same
+number of styles, the same characters and the same meter coverage. Each style
+is programmed by us. Snapshot tests check `song.json → events.json`.
 
 ### 3.6 Audio (`motif_audio`), the main technical risk
 * **Synthesis.** We synthesise all MIDI ourselves from SoundFonts, which gives sample-accurate timing and identical sound on every platform. The candidate is `dart_melty_soundfont`, a pure-Dart SF2 synth. It runs in a background isolate on native platforms. On web we use a Web Worker or AudioWorklet, or swap in a JS SF2 synth behind the same interface.
-* **Output.** We stream PCM blocks to the device. Candidates are `flutter_soloud` (buffer streams; also decodes WAV/MP3 for audio tracks), `mp_audio_stream` and `flutter_pcm_sound`. Which one we use is decided in the M0 spike.
+* **Output.** We stream PCM blocks to the device. Candidates are `flutter_soloud`, `mp_audio_stream` and `flutter_pcm_sound`. Which one we use is decided in the M0 spike.
 * **Transport.** A look-ahead scheduler renders ~50–100 ms ahead. The playhead is derived from frames actually played, not from a `Timer`. It also handles loop ranges and count-in.
-* **Audio clips** are decoded once to PCM, then time-placed and mixed (offset, loop, split, volume, mute, solo). Waveform peaks are precomputed for drawing.
-* **Sounds.** We ship permissively licensed SoundFonts: FluidR3_GM (MIT), MuseScore_General (MIT) or GeneralUser GS (licence must be checked). A `sounds.yaml` catalogue maps our names and categories to bank/program numbers and default octaves.
+* **Audio clips** are decoded once to PCM, then time-placed and mixed. Waveform peaks are precomputed for drawing.
+* **Sounds.** These come from high-quality CC0/CC-BY multisample libraries (Salamander Grand, VSCO 2 CE, CC0 drum kits…) packed into SF3. FluidR3_GM or MuseScore_General (MIT) cover the gaps. A `sounds.yaml` catalogue mirrors Hookpad's categories.
 
 ### 3.7 UI (`apps/motifforge`)
-* **State**: Riverpod. `songProvider` (current `Song` + undo stack), `editorProvider` (cursor, selection, active voice, palette, modes), `transportProvider`, `settingsProvider` (persisted with `shared_preferences`).
+Same **layout** as Hookpad 2 (§1.10) with our own skin: icons, fonts, exact colours and spacing.
+* **State**: Riverpod. `songProvider` (current `Song` + undo stack), `editorProvider` (cursor, selection, active voice, palette, modes), `transportProvider`, `settingsProvider`.
 * **Score view**: a custom `RenderBox`/`CustomPainter` per *system* (line), inside a virtualised `ListView`. Each system draws, from top to bottom:
-  1. the measure bar with change flags
-  2. the section labels
+  1. the section labels
+  2. the measure bar with change flags
   3. the loop bar
-  4. the melody staff, compact or chromatic, which grows vertically to fit the octaves used
+  4. the melody staff, compact or chromatic
   5. lyrics
-  6. the chord staff
+  6. the chord staff, with Roman numeral and name labels
   7. the audio lane
 
-  Hit-testing returns typed targets: note body, inner edge, outer edge, chord, flag, measure.
-* **Palettes**: duration, note (1–7, rest, raise/lower, triplet, split/tie), voice panel, chord palette (degrees 1–7, type, inversion, sus, add/omit, alter, applied, borrow, Magic Chord). The top bar holds play/record/loop/click/volume and meter/key/tempo/band/lyrics/sections, plus zoom and horizontal zoom.
-* **Keyboard**: a central `KeymapService` built on `HardwareKeyboard`. It needs *held-key state*, because Hookpad-style entry depends on what's held: ↑/↓ while typing a digit shifts the octave, and `.`/`,` add an accidental. The keymap is remappable and shown in a cheat-sheet overlay. Default bindings follow §1.
-* **Dialogs**: key picker (circle of fifths + scale list + parallel/relative), meter, tempo (tap tempo), band editor (templates | tracks | sounds), measure operations (add before/after, key/meter/tempo/band change, line break, export range), lyrics side panel, audio clip panel.
+  The song-end handle sits after the last system. Hit-testing returns typed targets: note body, inner edge, outer edge, chord, flag, measure, end handle.
+* **Palettes**: arranged exactly as described in §1.10, switching between note mode and chord mode with the cursor's staff.
+* **Keyboard**: a central `KeymapService` built on `HardwareKeyboard`. It tracks *held keys*, because entry depends on what's held: ↑/↓ while typing a digit shifts the octave, `.`/`,` add an accidental, and Alt-drag pushes notes. Default bindings are Hookpad's; users can remap them.
+* **Dialogs**: key picker (circle of fifths + scale list + parallel/relative), meter (with beat unit), tempo (tap tempo, swing), band editor (Templates | Band Tracks | Sounds), measure operations, lyrics side panel, sections, audio file panel and BPM dialog, YouTube attach, export, settings, Mix, Chord Chart.
 * **Touch**: long-press selection, pinch zoom, an on-screen degree keypad and bottom-sheet palettes on tablets.
 
 ### 3.8 Files and interop (`motif_io`)
-* **Native format**: `*.motif`, versioned JSON (optionally gzipped), with a migration chain `vN → vN+1`. Desktop and mobile autosave to the app documents folder; web uses IndexedDB plus download and upload.
-* **Clipboard**: our own JSON payload. We also *import* Hookpad's clipboard JSON (`sd`, `octave`, `beat`, `duration`, `isRest`) so users can move ideas over. That's interoperability, not copying.
-* **MIDI export**: our own SMF format-1 writer. It writes a conductor track (tempo, meter, key) and one track per band track (program, volume, octave).
-* **MIDI import (stretch)**: quantise and key-detect, then convert to degrees.
-* **MusicXML export**: melody + piano harmony with chord symbols and lyrics. Users can open it in MuseScore or Dorico straight away.
-* **PDF (score, lead sheet, tab)**: in-app engraving with the `pdf` package and an SMuFL font (Bravura/Leland, OFL). We start with the lead sheet, which is the simplest layout, then the grand-staff score, then tab.
-* **Audio export**: offline render (faster than real time) → WAV. MP3 comes via LAME over FFI on native and a JS encoder on web.
-* **Lyrics**: Liang hyphenation with the TeX `hyph-en-us` patterns (check the licence; `hyphenatorx` on pub may already do this), plus the `-`, `_` and `_N_` override syntax.
+* **Native format**: `*.motif`, versioned JSON with a migration chain `vN → vN+1`. Desktop and mobile autosave to the app documents folder; web uses IndexedDB. Open From Disk and Save To Disk match Hookpad's menu items.
+* **Hookpad clipboard**: always **read** it (`sd`, `octave`, `beat`, `duration`, `isRest`, plus chord fields once we have samples). **Write** it too, if a black-box test shows Hookpad accepts our payload. The `fp` field is opaque, so if Hookpad requires it to be valid, our support is read-only.
+* **Hookpad "Save To Disk" import**: needs sample files (§0.5).
+* **MIDI export**: our own SMF format-1 writer. It writes a conductor track and one track per band track. **MIDI import**: quantise and key-detect, then convert to degrees.
+* **MusicXML export.**
+* **PDF (score, lead sheet, tab)**: in-app engraving with the `pdf` package and an SMuFL font (Bravura/Leland, OFL).
+* **Audio export**: offline render → WAV, then MP3 via LAME over FFI on native and a JS encoder on web.
+* **Lyrics**: Liang hyphenation with the TeX `hyph-en-us` patterns (check the licence), plus the `-`, `_` and `_N_` override syntax.
 
-### 3.9 Suggestions (`motif_suggest`)
-We don't have Hooktheory's TheoryTab corpus, so we build our own:
-* **Magic Chord**: a back-off n-gram model (up to 4-grams) over *key-relative* chord tokens such as `IV`, `V7/vi` or `bVII`. It's trained offline from openly licensed corpora: ChoCo (CC BY 4.0) and the de Clercq–Temperley Rock Corpus (licence to be checked). The model ships as a compact JSON table. A rule-based fallback (functional harmony) fills gaps, and later we can optionally learn from the user's own songs, locally.
-* **Popular chords**: unigram frequencies per mode from the same model.
-* **Tone sets / bass sets / search**: computed from `motif_theory`, by enumerating every chord spec the palette can build in the current key.
-* **Progressions**: a hand-curated YAML library (I–V–vi–IV, ii–V–I, the Andalusian cadence…). Progressions can't be copyrighted, and the community can extend the list.
+### 3.9 Suggestions and AI (`motif_suggest`)
+Hookpad's data features run on Hooktheory's private **TheoryTab** database: crowd-sourced, key-relative transcriptions of real songs. We can't use it, so we build the equivalent in stages:
+1. **Bootstrap**: a back-off n-gram model over key-relative chord tokens (`IV`, `V7/vi`, `bVII`…). It's trained offline from openly licensed corpora such as ChoCo (CC BY 4.0) and others whose licences we've checked. Every dataset's source and licence is recorded in `assets/models/README.md`.
+2. **Community library** (M9): our own open, TheoryTab-style library of song analyses that users contribute under CC BY-SA, directly from MotifForge's YouTube-sync workflow. It retrains the model over time.
+* **Suggest Chord / Suggest Bass** (the Magic Chord equivalent) and **Popular Chords** use the model.
+* **Tone sets, bass sets and search** are computed from `motif_theory`.
+* **Progressions** are a curated YAML library.
+* **AI co-writer** (the Aria equivalent; scope comes from the M0 captures): a pluggable backend. It can be a local symbolic model trained on open data, or the user's own LLM API key. It produces chord, melody and harmonisation suggestions as normal edit commands, so they can be undone.
 
 ---
 
 ## 4. Roadmap
 
-Each milestone ends with something usable and demo-able. Rough effort assumes 1–2 part-time developers.
+Each milestone ends with something usable, and its conformance suite runs in CI.
 
-### M0: Foundations (≈2 weeks)
-- [ ] Workspace, packages, lints (`very_good_analysis` or `flutter_lints`), formatting, GitHub Actions (analyse + test + web build).
+### M0: Foundations and spec (≈2–3 weeks)
+- [ ] Collect the source material in §0.5. Write `docs/spec/` for melody, chords, structure and the keymap, with conformance cases.
+- [ ] Workspace, packages, lints, GitHub Actions (analyse + test + web build), conformance test harness.
 - [ ] `motif_theory`: scales, degree→pitch, spelling, chord builder, Roman numerals, with table tests.
-- [ ] **Audio spike**: play an SF2 C-major scale with sample-accurate timing on Web, macOS, Windows, Linux, Android and iOS. Measure latency and CPU, then pick the output plugin. *Decision gate*: if `dart_melty_soundfont` can't keep up on web, use the JS synth there.
-- [ ] Choose the licence and SoundFont, and write CONTRIBUTING and the clean-room rule.
+- [ ] **Audio spike**: play an SF2 scale with sample-accurate timing on Web, macOS, Windows, Linux, Android and iOS. Measure latency and CPU, then pick the output plugin.
+- [ ] Licence, CONTRIBUTING, clean-room rules, asset-licence ledger.
 
-### M1: Sketchpad MVP (≈4–6 weeks)
-*Goal: you can write and hear a simple song.*
-- [ ] Song model, commands, undo/redo, `.motif` save/load and autosave.
-- [ ] Score view: one voice, compact staff, chord staff, measures, auto-extend, 8 bars per line.
-- [ ] Keyboard entry: digits for notes and chords, `0` rest, durations `h j k l ;`, arrows, Shift selection, Backspace, Table mode, Smart Octave.
-- [ ] Mouse: click to place the cursor, selection box, drag pitch, edge resize (outer and inner).
-- [ ] Key and scale picker (9 scales, single key), meter (2–12), tempo.
-- [ ] Chord palette, basic: degrees 1–7, triad/7th, inversions, `i` cycling, figured bass.
-- [ ] Colours (diatonic-centric), Roman/absolute labels.
-- [ ] Playback: default band (piano lead, piano RH quarters, dotted piano bass), play/stop, loop bar, click.
+### M1: Core editor (≈4–6 weeks)
+*Goal: you can write and hear a simple song in a Hookpad-identical layout.*
+- [ ] Song model, commands, undo/redo (20), `.motif` save/load and autosave.
+- [ ] Score view: one voice, compact staff, chord staff, measures, auto-extend, end handle, 8 bars per line.
+- [ ] Keyboard entry per the keymap spec: digits, `0`, durations, arrows, Shift selection, Backspace, Table mode, Smart Octave.
+- [ ] Mouse: cursor, selection box, drag pitch, edge resize (outer and inner), chord move.
+- [ ] Header, transport and palette layout. Key and scale picker, meter, tempo.
+- [ ] Chord palette: degrees, rest, triad/7th, inversions (`i`), figured bass.
+- [ ] Diatonic-centric colours, Roman/absolute labels.
+- [ ] Playback with the default band, loop bar, click.
 
 ### M2: Full theory editing (≈4–6 weeks)
-- [ ] All embellishments (9/11/13, sus, add/omit, alterations), `e` cycling, sticky palette.
-- [ ] Borrowed and applied chords, with correct numeral and name rendering.
-- [ ] Note accidentals (`.` `,` while typing or on a selection), chromatic staff, major-centric colours with stripes.
-- [ ] Split (`/`), tie (`t`), triplets, Text entry mode with Alt-drag push and pull.
-- [ ] Copy/cut/paste, the clipboard JSON, and Hookpad clipboard import.
-- [ ] Measure operations: add before/after, delete range. Key, meter and tempo changes with flags. Parallel vs relative transposition. Swing. Tap tempo.
-- [ ] Chord compatibility guides, line-break settings, horizontal and vertical zoom.
-- [ ] 4 melody voices: active voice, visibility, play toggles, inactive-voice styles.
+- [ ] All embellishments, `e`/`d`/`n` shortcuts, sticky palette, borrowed and applied chords.
+- [ ] Note accidentals, chromatic staff, major-centric colours with stripes.
+- [ ] Split, tie, triplets, Text entry mode with Alt-drag.
+- [ ] Copy/cut/paste, Paste From Clipboard with a fallback dialog, reading Hookpad clipboard JSON.
+- [ ] Measure operations; key, meter, tempo changes with flags; parallel vs relative transposition; swing; tap tempo.
+- [ ] Chord compatibility guides, line-break settings, zoom and horizontal zoom.
+- [ ] 4 voices: active, visible, play, inactive-colouring.
 
-### M3: Band and arrangement (≈5–8 weeks; content heavy)
-- [ ] Band editor: tracks (type, sound, volume, octave, mute), sound catalogue by category, templates (built-in and user), band changes.
-- [ ] Harmony style DSL and ~10 starter styles. Voicing around the octave centre with voice leading.
-- [ ] Guitar shape finder (open, barre, power chord).
-- [ ] Bass style DSL and ~8 styles.
-- [ ] Drum engine (basic, regular with fills, breaks, pickups) and ~10 kits × common meters.
-- [ ] Mixer: per-channel mute, master volume.
+### M3: Band and arrangement (≈6–8 weeks; content heavy)
+- [ ] Band editor (Templates | Band Tracks | Sounds), sound catalogue, templates, band changes, Mix panel.
+- [ ] Harmony style DSL and a full style catalogue matching Hookpad's coverage.
+- [ ] Guitar shape finder, bass styles, drum engine (basic, regular, breaks, pickups) with full kit coverage.
+- [ ] Sample sourcing and SF3 packing pipeline.
 
 ### M4: Export (≈4–6 weeks)
-- [ ] MIDI (format 1), whole song or a measure range.
-- [ ] WAV offline render, then MP3.
-- [ ] MusicXML.
-- [ ] Lead sheet PDF, then score PDF, then guitar tab PDF.
+- [ ] MIDI, WAV/MP3, MusicXML, lead sheet, score and tab PDFs; whole song or a measure range.
 
 ### M5: Songwriting assistants (≈4 weeks)
-- [ ] Sections, and the lyrics panel (syllabification, overrides, skip boxes, per section and per voice). Lyrics are shown in the staff and in the exports.
-- [ ] Corpus pipeline (`tool/` scripts) → n-gram model. Magic Chord UI, popular chords, search, tone sets, bass sets, progressions library.
+- [ ] Sections, lyrics panel (syllabification, overrides, skip boxes, per section and per voice).
+- [ ] Corpus pipeline → n-gram model. Suggest Chord/Bass, popular chords, search, tone sets, bass sets, progressions.
+- [ ] Chord Chart, Guides and Metrics panels (per the M0 captures).
 
 ### M6: Input and media (≈4–6 weeks)
-- [ ] MIDI controller input: `flutter_midi_command` on native, Web MIDI via `dart:js_interop`. Step entry maps pitch to degree; record mode uses count-in and quantise.
-- [ ] Audio tracks: import, BPM/meter dialog, insert modes, move/resize/loop, offset, split, mute/solo/volume, waveform display.
-- [ ] YouTube sync (web and mobile through `youtube_player_iframe`; desktop as available): markers with `[` `]`, test-sync mode.
+- [ ] MIDI controller (step entry and record mode), via `flutter_midi_command` on native and Web MIDI on web.
+- [ ] Audio tracks (the full feature set in §1.5).
+- [ ] YouTube sync (`youtube_player_iframe`; desktop via webview where available).
+- [ ] MIDI import, Hookpad "Save To Disk" import.
 
 ### M7: Polish and release
-- [ ] Phone layout, accessibility (screen-reader labels for notes and chords, high-contrast colours, colour-blind palette), i18n, onboarding tutorial song, docs site, store builds.
-- Stretch: MIDI import, AI assistant (Aria-like) via an optional pluggable LLM backend, song "metrics", real-time collaboration.
+- [ ] Tablet and phone layouts, accessibility (screen-reader labels, colour-blind palette), i18n, our own tutorial song and docs site, store builds, legal review (§0.3).
+
+### M8: Cloud (optional, self-hostable)
+- [ ] Accounts, cloud project list (Open/Save/Save As like Hookpad), share-by-link read-only player, embeddable player.
+- [ ] `server/`: a Dart backend (e.g. Serverpod or Dart Frog) or PocketBase. Anyone can self-host it, and we host a public instance.
+
+### M9: Community library and AI co-writer
+- [ ] Song analysis library: publish from the YouTube-sync workflow, browse and search, CC BY-SA licensing, moderation.
+- [ ] Retrain the suggestion model on the library.
+- [ ] AI co-writer (the Aria equivalent).
 
 ### Feature parity checklist (guide section → milestone)
 | Guide section | Milestone |
 |---|---|
 | Melody: add/delete, select, pitch, octave, duration | M1 |
-| Melody: copy/paste, split, tie, non-diatonic, triplets | M2 |
-| Melody: voices | M2 |
+| Melody: copy/paste, split, tie, non-diatonic, triplets, voices | M2 |
 | Chords: add/delete, select, duration, inversions | M1 |
 | Chords: copy/paste, split, tie, embellishments, non-diatonic | M2 |
-| Magic Chord and smart chord options | M5 |
+| Magic Chord / Magic Bass and smart chord options | M5 |
 | Measures, key/scale, meter, tempo (single) | M1 |
 | Key/meter/tempo changes, scale transposition | M2 |
 | Sounds/instruments, band templates, band changes | M3 |
 | Playback: harmony, guitar, bass, drums | M1 (defaults) → M3 (full) |
 | Audio tracks | M6 |
-| Export: MIDI, MP3 | M4 |
-| Export: score, tab, lead sheet | M4 |
+| Export: score, tab, lead sheet, MIDI, MP3 | M4 |
 | Settings: entry mode, labels, colours, guides, smart octave, staff spacing | M1–M2 |
 | Looping, line breaks | M1–M2 |
-| Keyboard shortcuts (remappable) | M1 → ongoing |
+| Keyboard shortcuts | M1 → ongoing (conformance) |
 | Lyrics | M5 |
 | MIDI controller | M6 |
 | YouTube sync | M6 |
+| TheoryTab transfer → community library | M9 |
 | Copy and paste between projects | M2 |
 | Undo/redo | M1 |
+| Aria / Guides / Metrics / Chord Chart / Mix | M9 / M5 / M5 / M5 / M3 |
+| Accounts and cloud projects | M8 |
 
 ---
 
 ## 5. Quality strategy
-* **Unit tests**: theory tables, model commands (each edit, in Table and Text mode), engine snapshots, and MIDI/MusicXML writers checked by round-trip parsing.
-* **Golden tests** of rendered systems (colours, labels, flags) in light and dark themes.
-* **Integration tests** that replay keystroke sequences, e.g. `1 2 3 ↓5 k l` → expected song JSON.
+* **Conformance suite**: generated from `docs/spec/`. It's the single measure of parity.
+* **Unit tests**: theory tables, model commands (Table and Text mode), engine snapshots, and writers checked by round-trip parsing.
+* **Golden tests** of rendered systems and palettes, in light and dark themes.
+* **Integration tests** that replay keystroke sequences against the full app.
 * **Performance budgets**: a 200-measure, 4-voice song scrolls at 60 fps; edit-to-repaint stays under 16 ms; audio has no dropouts at a 256-frame buffer on desktop.
-* **Fixture songs** in `test/fixtures/` that exercise every feature, reused across exporter tests.
 
 ## 6. Key risks and mitigations
 | Risk | Mitigation |
 |---|---|
-| Cross-platform audio timing and latency, especially web | M0 spike with a decision gate; own synth for determinism; a platform-specific backend behind one interface |
-| Held-key entry semantics in Flutter | Prototype the keymap service in M0/M1, with tests for key-repeat and IME edge cases |
-| Content volume (styles, drums, sounds) | Data-driven DSLs, a contributor guide, a style preview tool |
-| PDF engraving complexity | Ship MusicXML first; start with the lead sheet; keep layout rules small |
-| Chord-suggestion data licensing | Use only CC-BY or similar corpora; record the source and licence of every dataset in `assets/models/README` |
-| Trademark or copyright confusion | Our own name and branding, clean-room docs, no Hookpad assets |
+| Cross-platform audio timing, especially web | M0 spike with a decision gate; own synth; a platform backend behind one interface |
+| Held-key entry semantics in Flutter | Prototype the keymap service early, with conformance tests |
+| Content volume (sounds, styles, drums) | Data-driven DSLs, a sample-packing pipeline, a contributor guide |
+| Suggestion quality without TheoryTab | Open corpora now, the community library later, a rule-based fallback |
+| Undocumented behaviour | §0.5 captures, then conformance cases; treat mismatches as bugs |
+| PDF engraving | MusicXML first, then the lead sheet, then the score, then tab |
+| Legal (trade dress, trademarks, ToS) | §0 rules, our own skin and names, legal review before launch |
 
 ## 7. Open decisions
-1. **Licence**: GPL-3.0 keeps forks open but makes App Store distribution awkward; Apache-2.0 or MIT maximise adoption. My suggestion is **MPL-2.0** or **Apache-2.0** if store releases matter.
-2. **Platform priority**: start desktop and web (keyboard-first) and do tablets in M7, or design touch-first from day one?
-3. **Hookpad interop**: is importing Hookpad's clipboard JSON wanted? It's cheap, and helps users migrate.
-4. **Offline-only** vs optional sync later. This affects whether we design for CRDTs now.
-5. **Audio output plugin**: decided by the M0 spike.
+1. **Licence**: GPL-3.0 keeps forks open but makes App Store distribution awkward. Apache-2.0 or MPL-2.0 are store-friendly.
+2. **Platform priority**: web and desktop first (Hookpad is a web app), tablets in M7?
+3. **Backend stack** for M8: Serverpod / Dart Frog (all Dart) or PocketBase (fastest to ship).
+4. **Product naming** for features: "Suggest Chord", "Song Library", "Co-writer"…

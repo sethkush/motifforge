@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  dart:
+    name: Analyze, format, test, conformance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Format
+        run: dart format --output=none --set-exit-if-changed packages tool apps/audio_spike/lib
+      - name: Analyze
+        run: dart analyze --fatal-infos
+      - name: Unit tests
+        run: dart test packages/motif_theory packages/motif_conformance tool/audio_bench
+      - name: Parity report
+        working-directory: packages/motif_conformance
+        run: dart run motif_conformance:report
+
+  web:
+    name: Web builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Synth compiles to JS and Wasm
+        working-directory: tool/audio_bench
+        run: |
+          dart compile js -O2 web/bench.dart -o build/bench.js
+          dart compile wasm -O2 web/bench.dart -o build/bench.wasm
+      - name: Audio spike app (web, wasm + JS fallback)
+        working-directory: apps/audio_spike
+        run: flutter build web --wasm --no-web-resources-cdn

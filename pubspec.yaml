@@ -1,0 +1,19 @@
+name: motifforge_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.11.0
+
+workspace:
+  - packages/motif_theory
+  - packages/motif_conformance
+  - tool/audio_bench
+  - apps/audio_spike
+
+dev_dependencies:
+  lints: ^6.1.0
+
+dependency_overrides:
+  # Patched for web builds; see third_party/dart_melty_soundfont/MOTIFFORGE_PATCHES.md
+  dart_melty_soundfont:
+    path: third_party/dart_melty_soundfont

@@ -1,0 +1,17 @@
+name: motif_conformance
+description: Loads the conformance cases embedded in docs/spec/*.md and runs them against MotifForge packages.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  motif_theory: any
+  path: ^1.9.1
+  yaml: ^3.1.4
+
+dev_dependencies:
+  lints: ^6.1.0
+  test: ^1.25.0

@@ -1,0 +1,23 @@
+name: audio_spike
+description: M0 audio spike — plays a band-like workload through the pure-Dart synth and an audio output plugin, and reports underruns and CPU load.
+publish_to: none
+version: 0.1.0
+resolution: workspace
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  audio_bench: any
+  dart_melty_soundfont: ^2.0.0
+  mp_audio_stream: ^0.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

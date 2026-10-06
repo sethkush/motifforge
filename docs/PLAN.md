@@ -53,7 +53,7 @@ These are expressive works, so they are protected:
 
 ### 0.4 Clean-room process
 * **Specs.** People write behaviour specs in `docs/spec/<area>.md`, in their own words, from the public guide and from using Hookpad normally (screenshots and screen recordings). Every rule comes with **conformance cases**: a starting state, an input sequence, and the expected result.
-* **Tests.** Conformance cases become automated tests in `test/conformance/`. A parity dashboard shows the pass rate per area.
+* **Tests.** Conformance cases become automated tests in `packages/motif_conformance`. Its `report` command shows the pass rate per area (the parity dashboard).
 * **The rule** is "never copy their code, text or assets", not "different people must write the spec and the code". A small team can do both.
 
 ### 0.5 Source material still needed
@@ -211,9 +211,11 @@ motifforge/
 │  ├─ motif_audio/              # synth + audio output + transport (Flutter plugin deps)
 │  ├─ motif_io/                 # MIDI / MusicXML / WAV / MP3 / PDF / clipboard / Hookpad import
 │  ├─ motif_suggest/            # chord suggestions, tone/bass sets, progressions, AI co-writer client
+│  ├─ motif_conformance/        # runs the conformance cases in docs/spec, parity report
 │  └─ motif_cloud_client/       # optional sync / sharing client (M8)
 ├─ apps/
-│  └─ motifforge/               # Flutter UI
+│  ├─ motifforge/               # Flutter UI
+│  └─ audio_spike/              # M0 throwaway: on-device audio test app
 ├─ server/                      # optional self-hostable backend (M8–M9)
 ├─ assets/
 │  ├─ soundfonts/               # CC0/CC-BY SF2/SF3
@@ -224,7 +226,8 @@ motifforge/
 ├─ docs/
 │  ├─ PLAN.md
 │  └─ spec/                     # clean-room behaviour specs + conformance cases
-└─ tool/                        # corpus pipelines, SF3 packing, spec→test generator
+├─ third_party/                 # vendored, patched dependencies (licence + patch notes)
+└─ tool/                        # audio_bench (M0), corpus pipelines, SF3 packing
 ```
 
 Everything below `motif_audio` is **pure Dart**. Theory, model, engine and IO
@@ -379,12 +382,13 @@ Hookpad's data features run on Hooktheory's private **TheoryTab** database: crow
 Each milestone ends with something usable, and its conformance suite runs in CI.
 
 ### M0: Foundations and spec (≈2–3 weeks)
-- [ ] Collect the source material in §0.5. Write `docs/spec/` for melody, chords, structure and the keymap, with conformance cases.
-- [ ] Workspace, packages, lints, GitHub Actions (analyse + test + web build), conformance test harness.
-- [ ] `motif_theory`: scales, degree→pitch, spelling, chord builder, Roman numerals, with table tests.
-- [ ] **Audio spike**: play an SF2 scale with sample-accurate timing on Web, macOS, Windows, Linux, Android and iOS. Measure latency and CPU, then pick the output plugin.
-- [x] Licence: **ISC** for all code (see `LICENSE`). Bundled assets keep their own licences (CC0/CC-BY/OFL/MIT) and are listed in an asset-licence ledger, `assets/LICENSES.md`.
-- [ ] CONTRIBUTING, clean-room rules, asset-licence ledger.
+- [ ] Collect the source material in §0.5 (still needed from Hookpad users).
+- [x] First specs in `docs/spec/` (melody, chords, structure, display, keymap) with conformance cases tagged documented / observed / assumed.
+- [x] Workspace, lints, GitHub Actions (format, analyze, test, parity report, JS + Wasm web builds), conformance harness (`packages/motif_conformance`).
+- [x] `motif_theory`: scales, key spelling, degree→pitch, Smart Octave placement, chord builder (types, sus, add/omit, alterations, applied, borrowed, inversions), chord symbols, Roman numerals, colour slots, relative tonic. Table tests for every scale.
+- [~] **Audio spike** (`docs/spikes/m0-audio.md`): CPU side passed on the Dart VM, JS and Wasm. Two web blockers in `dart_melty_soundfont` found and patched (`third_party/`). Output plugin provisionally `mp_audio_stream`. **Open:** device runs on every platform.
+- [x] Licence: **ISC** for all code (see `LICENSE`). Bundled assets keep their own licences and are listed in `assets/LICENSES.md`.
+- [x] CONTRIBUTING with the clean-room rules, asset-licence ledger.
 
 ### M1: Core editor (≈4–6 weeks)
 *Goal: you can write and hear a simple song in a Hookpad-identical layout.*

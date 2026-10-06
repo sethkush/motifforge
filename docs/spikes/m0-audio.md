@@ -5,8 +5,11 @@ SoundFonts, fast enough and with stable timing on every target platform?
 And which plugin should push the audio to the device?
 
 **Status:** CPU side **passed** on the Dart VM, JavaScript and WebAssembly.
-**Device side is still open**: underruns and latency need measuring on real
-hardware (table below).
+Playback is verified **headlessly end to end** on Linux desktop and web
+(Chromium): the real app runs on a virtual display, plays through a virtual
+sound card, and the recorded output is checked for silence and dropouts
+(see "Headless test kit" below). Android runs on an emulator in CI. Real
+phones are still worth a check before committing to the design.
 
 ## What was built
 
@@ -53,6 +56,41 @@ pre-fill) had 27. Headless Chrome uses software rendering and has no real
 audio device, so these underrun counts aren't meaningful. They need checking
 in a real browser.
 
+## Headless test kit
+
+| Platform | Command | What it does |
+|---|---|---|
+| Linux desktop | `tool/headless/run_linux.sh` | Xvfb display + PulseAudio null sink; runs `integration_test/ui_test.dart` (drives the buttons, screenshots) and `spike_test.dart` (5 playback scenarios + CPU benchmark) in profile mode; records the sink and analyses it |
+| Web (Chromium) | `tool/headless/run_web.sh` | Builds each test as a web page, opens it in full Chromium via Playwright on Xvfb (so audio reaches the sink), screenshots on request, same recording analysis. `WEB_WASM=1` for Wasm |
+| Android | `tool/headless/run_android.sh` | Same tests on an emulator or device (CI starts an emulator); screenshots through the integration-test binding |
+
+`tool/headless/analyze_audio.py` lines the recording up with the test's
+`SPIKE_MARK` log lines and, for each playback window, reports the sounding
+length, level and **dropouts** (runs of digital silence ≥ 1 ms). The app's
+own underrun counter and the recording agree, which validates both. CI runs
+all three (`.github/workflows/headless.yml`, `android.yml`); results appear
+in the job summary and as artifacts (logs, screenshots, FLAC recordings).
+
+## Findings from the headless runs
+
+1. **Wall-clock pumping is wrong.** Pushing audio by the wall clock filled
+   the device buffer while the device was still starting, so steady-state
+   latency became the whole buffer (~0.5 s). Fixed with **backpressure**:
+   the ring buffer is sized to the target latency and we push until the
+   device says it's full (`mp_audio_stream` returns -1 when full on native).
+2. **Linux/PulseAudio needs an explicit latency request.** Without one the
+   device starts 0.9–2.2 s late. With 20 ms requested (`PULSE_LATENCY_MSEC`)
+   it starts in 5–55 ms and plays cleanly at 30 ms look-ahead and above
+   (20 ms: occasional underrun). The real engine must configure a low
+   device period itself.
+3. **Web needs synthesis off the UI thread.** The web plugin's push has no
+   "full" signal, so web still paces by the wall clock, and rendering on the
+   UI thread gave 3–21 underruns per 8 s scenario in Chromium (a few short
+   dropouts in the recording). Plan: render in an AudioWorklet or Worker
+   (Wasm) behind the `AudioBackend` interface.
+4. **Clipboard can be unavailable** (headless browser): "Copy results" now
+   falls back to a selectable dialog.
+
 ## Blockers found (and fixed)
 
 `dart_melty_soundfont` 2.0.0 didn't compile for the web:
@@ -78,9 +116,10 @@ and drop the vendored copy once a release has them.
 M6 when audio tracks need decoding. If one plugin can do both well, it's
 simpler to use one.
 
-## Still to do: device runs
+## Still to do: real-device runs
 
-Run `apps/audio_spike` on each platform with the defaults (100 ms look-ahead,
+The headless runs cover behaviour and catch regressions. Real hardware is
+still worth one manual pass before we lock in the design. Run `apps/audio_spike` on each platform with the defaults (100 ms look-ahead,
 reverb on), then with 64 stress voices, then with look-ahead lowered until
 underruns appear. Record the numbers:
 

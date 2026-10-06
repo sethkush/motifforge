@@ -23,6 +23,16 @@ dart test packages/motif_theory/test/chord_tables_test.dart -N "applied"      # 
 (cd apps/audio_spike && flutter build web --wasm --no-web-resources-cdn)      # spike app web build
 ```
 
+Headless end-to-end testing (real app, virtual display, virtual sound card, recorded output analysed for dropouts; see `docs/spikes/m0-audio.md`):
+
+```sh
+tool/headless/run_linux.sh                 # Linux desktop: UI test + audio measurements
+tool/headless/run_web.sh                   # Chromium via Playwright (needs PLAYWRIGHT_MODULE, DISPLAY)
+tool/headless/run_android.sh [secs] [dev]  # Android emulator/device
+```
+
+Results land in `build/headless/<platform>/` (summary.md, logs, screenshots, FLAC). Screenshots can be viewed with the Read tool. In this container, first start `Xvfb :99` and set `DISPLAY=:99`; the scripts start PulseAudio themselves. Never use `pkill -f` with a pattern that also appears in your own command line: it kills the calling shell (exit 144).
+
 CI (`.github/workflows/ci.yml`) runs format, analyze, tests and the parity report, and compiles the synth to JS and Wasm. The JS build matters: Flutter web always builds a JS fallback.
 
 ## Clean-room rules (non-negotiable)
@@ -51,5 +61,7 @@ Design decisions that span packages:
 ## Environment note
 
 The cloud environment's network policy blocks `hooktheory.com`. Hookpad reference material (the guide, a shortcuts page, screenshots) has to come from the user. The gaps still open are listed in `docs/PLAN.md` §0.5.
+
+For headless runs the container also needs: `apt-get install libgtk-3-dev pulseaudio pulseaudio-utils` (clang, cmake, ninja, Xvfb, ffmpeg, numpy are preinstalled). Playwright lives at `/opt/node-tools/node_modules/playwright`, with Chromium in `/opt/pw-browsers`. Android can't build here (the Android SDK download host is blocked), so Android runs in CI (`android.yml`); read results with the GitHub MCP tools (`actions_list`, `get_job_logs`).
 
 The cloud container doesn't ship Flutter. Install the stable tarball listed in `https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json` into `/opt/flutter`, run `git config --global --add safe.directory /opt/flutter`, and add `/opt/flutter/bin` to `PATH`. GitHub and gstatic are blocked, so web builds need `--no-web-resources-cdn`.

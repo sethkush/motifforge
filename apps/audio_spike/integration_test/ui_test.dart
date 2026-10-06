@@ -90,6 +90,19 @@ void main() {
     );
     await tester.tap(find.text('Copy results'));
     await tester.pump();
-    expect(find.text('Results copied'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 300));
+    // Either copied, or (no clipboard access) shown in a dialog to copy.
+    final copied = find.text('Results copied').evaluate().isNotEmpty;
+    if (!copied) {
+      expect(find.text('Copy these results'), findsOneWidget);
+      expect(
+        find.textContaining('MotifForge audio spike results'),
+        findsOneWidget,
+      );
+      await screenshot(binding, tester, '05-copy-dialog');
+      await tester.tap(find.text('Close'));
+      await tester.pump();
+    }
+    mark('ui-copy', {'clipboard': copied});
   }, timeout: const Timeout(Duration(minutes: 10)));
 }

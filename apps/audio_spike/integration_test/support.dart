@@ -15,6 +15,10 @@ const shotDir = String.fromEnvironment(
   defaultValue: 'build/screenshots',
 );
 
+/// Set when the host (e.g. a Playwright runner) takes screenshots itself:
+/// the test asks with a `screenshot-request` mark and waits briefly.
+const hostScreenshots = bool.fromEnvironment('HOST_SCREENSHOTS');
+
 bool get _usesBindingScreenshots =>
     kIsWeb ||
     defaultTargetPlatform == TargetPlatform.android ||
@@ -31,6 +35,11 @@ Future<void> screenshot(
   String name,
 ) async {
   await tester.pump();
+  if (hostScreenshots) {
+    mark('screenshot-request', {'name': name});
+    await waitReal(tester, const Duration(milliseconds: 700));
+    return;
+  }
   if (_usesBindingScreenshots) {
     if (!kIsWeb && !_surfaceConverted) {
       await binding.convertFlutterSurfaceToImage();

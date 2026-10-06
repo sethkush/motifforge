@@ -102,15 +102,23 @@ def main():
     for label, start_ms, stop_ms, continuous in wins:
         a0 = max(int((start_ms - start_epoch - 200) / 1000 * rate), 0)
         limit = min(int((stop_ms - start_epoch + 3000) / 1000 * rate), len(level))
-        loud = np.nonzero(level[a0:limit] > 1e-4)[0]
-        if not len(loud):
+        # Split [a0, limit) into sound segments separated by >= 300 ms of
+        # silence and take the longest one that starts within 2 s of the
+        # mark (an earlier note's tail can precede the window's own sound).
+        win = level[a0:limit]
+        segments = []
+        pos = 0
+        for s0, n in silent_runs(win, end_gap) + [(len(win), 0)]:
+            if s0 > pos:
+                segments.append((pos, s0))
+            pos = s0 + n
+        segments = [g for g in segments if g[0] <= 2 * rate and win[g[0]:g[1]].max() > 1e-4]
+        if not segments:
             results.append({"window": label, "error": "no sound"})
             ok = False
             continue
-        a = a0 + int(loud[0])
-        seg = level[a:limit]
-        long_runs = [r for r in silent_runs(seg, end_gap)]
-        b = a + (long_runs[0][0] if long_runs else len(seg))
+        g0, g1 = max(segments, key=lambda g: g[1] - g[0])
+        a, b = a0 + g0, a0 + g1
         seg = level[a:b]
         runs = silent_runs(seg, rate // 1000) if continuous else []
         rms = float(np.sqrt(np.mean(audio[a:b] ** 2)))

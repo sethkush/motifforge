@@ -103,7 +103,28 @@ class _SpikePageState extends State<SpikePage> {
   }
 
   Future<void> _copyReport() async {
-    await Clipboard.setData(ClipboardData(text: _report()));
+    final text = _report();
+    try {
+      await Clipboard.setData(ClipboardData(text: text));
+    } on PlatformException {
+      // Clipboard can be unavailable (permissions, some browsers): show the
+      // text so it can be selected and copied by hand.
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Copy these results'),
+          content: SingleChildScrollView(child: SelectableText(text)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,

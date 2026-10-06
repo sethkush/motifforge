@@ -1,4 +1,4 @@
-name: Headless (Linux desktop)
+name: Headless (Linux desktop, web)
 
 # Runs the real app on a virtual display with a virtual sound card, drives
 # the UI, records what actually comes out of the speakers and checks it for
@@ -37,4 +37,36 @@ jobs:
         with:
           name: headless-linux
           path: build/headless/linux
+          if-no-files-found: ignore
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install virtual display and sound
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q xvfb pulseaudio pulseaudio-utils ffmpeg python3-numpy
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Install Playwright Chromium
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
+          npm init -y >/dev/null && npm install playwright@1 >/dev/null
+          npx playwright install --with-deps chromium
+          echo "PLAYWRIGHT_MODULE=$RUNNER_TEMP/pw/node_modules/playwright" >> "$GITHUB_ENV"
+      - name: Run headless web tests
+        run: xvfb-run -a -s "-screen 0 1280x1024x24" env SPIKE_SECONDS=10 tool/headless/run_web.sh
+      - name: Summary
+        if: always()
+        run: cat build/headless/web/summary.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: headless-web
+          path: build/headless/web
           if-no-files-found: ignore

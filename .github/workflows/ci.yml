@@ -16,7 +16,7 @@ jobs:
           cache: true
       - run: flutter pub get
       - name: Format
-        run: dart format --output=none --set-exit-if-changed packages tool apps/audio_spike/lib
+        run: dart format --output=none --set-exit-if-changed packages tool apps/audio_spike/lib apps/audio_spike/integration_test
       - name: Analyze
         run: dart analyze --fatal-infos
       - name: Unit tests

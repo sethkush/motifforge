@@ -383,7 +383,8 @@ Each milestone ends with something usable, and its conformance suite runs in CI.
 - [ ] Workspace, packages, lints, GitHub Actions (analyse + test + web build), conformance test harness.
 - [ ] `motif_theory`: scales, degree→pitch, spelling, chord builder, Roman numerals, with table tests.
 - [ ] **Audio spike**: play an SF2 scale with sample-accurate timing on Web, macOS, Windows, Linux, Android and iOS. Measure latency and CPU, then pick the output plugin.
-- [ ] Licence, CONTRIBUTING, clean-room rules, asset-licence ledger.
+- [x] Licence: **ISC** for all code (see `LICENSE`). Bundled assets keep their own licences (CC0/CC-BY/OFL/MIT) and are listed in an asset-licence ledger, `assets/LICENSES.md`.
+- [ ] CONTRIBUTING, clean-room rules, asset-licence ledger.
 
 ### M1: Core editor (≈4–6 weeks)
 *Goal: you can write and hear a simple song in a Hookpad-identical layout.*
@@ -484,7 +485,6 @@ Each milestone ends with something usable, and its conformance suite runs in CI.
 | Legal (trade dress, trademarks, ToS) | §0 rules, our own skin and names, legal review before launch |
 
 ## 7. Open decisions
-1. **Licence**: GPL-3.0 keeps forks open but makes App Store distribution awkward. Apache-2.0 or MPL-2.0 are store-friendly.
-2. **Platform priority**: web and desktop first (Hookpad is a web app), tablets in M7?
-3. **Backend stack** for M8: Serverpod / Dart Frog (all Dart) or PocketBase (fastest to ship).
-4. **Product naming** for features: "Suggest Chord", "Song Library", "Co-writer"…
+1. **Platform priority**: web and desktop first (Hookpad is a web app), tablets in M7?
+2. **Backend stack** for M8: Serverpod / Dart Frog (all Dart) or PocketBase (fastest to ship).
+3. **Product naming** for features: "Suggest Chord", "Song Library", "Co-writer"…

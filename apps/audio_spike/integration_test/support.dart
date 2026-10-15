@@ -102,3 +102,21 @@ Future<void> reveal(WidgetTester tester, Finder finder) async {
   }
   expect(finder, findsWidgets, reason: 'could not scroll to $finder');
 }
+
+/// Pumps until [finder] matches (async engine start/stop), up to [timeout].
+/// Pass a finder with `skipOffstage: false` for widgets that may be scrolled
+/// out of view.
+Future<void> waitFor(
+  WidgetTester tester,
+  Finder finder, {
+  Duration timeout = const Duration(seconds: 20),
+}) async {
+  final end = DateTime.now().add(timeout);
+  while (finder.evaluate().isEmpty) {
+    if (DateTime.now().isAfter(end)) {
+      expect(finder, findsWidgets, reason: 'timed out waiting for $finder');
+    }
+    await waitReal(tester, const Duration(milliseconds: 100));
+    await tester.pump();
+  }
+}

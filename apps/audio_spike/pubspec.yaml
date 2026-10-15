@@ -13,6 +13,7 @@ dependencies:
   audio_bench: any
   dart_melty_soundfont: ^2.0.0
   mp_audio_stream: ^0.3.0
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:

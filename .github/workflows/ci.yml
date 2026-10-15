@@ -16,7 +16,7 @@ jobs:
           cache: true
       - run: flutter pub get
       - name: Format
-        run: dart format --output=none --set-exit-if-changed packages tool apps/audio_spike/lib apps/audio_spike/integration_test
+        run: dart format --output=none --set-exit-if-changed packages tool apps/audio_spike/lib apps/audio_spike/worker apps/audio_spike/integration_test
       - name: Analyze
         run: dart analyze --fatal-infos
       - name: Unit tests
@@ -41,5 +41,6 @@ jobs:
           dart compile js -O2 web/bench.dart -o build/bench.js
           dart compile wasm -O2 web/bench.dart -o build/bench.wasm
       - name: Audio spike app (web, wasm + JS fallback)
-        working-directory: apps/audio_spike
-        run: flutter build web --wasm --no-web-resources-cdn
+        run: |
+          tool/build_synth_worker.sh
+          cd apps/audio_spike && flutter build web --wasm --no-web-resources-cdn

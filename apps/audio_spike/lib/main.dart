@@ -36,40 +36,75 @@ class SpikePage extends StatefulWidget {
 }
 
 class _SpikePageState extends State<SpikePage> {
-  final _engine = SpikeEngine();
+  AudioEngine? _engine;
   SpikeSettings _settings = const SpikeSettings();
   SpikeStats? _stats;
   Timer? _refresh;
   String _status = 'Stopped';
+  bool _busy = false;
   final _benchLines = <String>[];
   bool _benchRunning = false;
 
-  void _start() {
-    final rc = _engine.start(_settings);
+  bool get _running => _engine?.running ?? false;
+
+  Future<void> _start() async {
+    setState(() {
+      _busy = true;
+      _status = 'Starting…';
+    });
+    var engine = _engine;
+    if (engine == null ||
+        engine.mode == 'ui-thread' && _settings.background ||
+        engine.mode != 'ui-thread' && !_settings.background) {
+      engine?.dispose();
+      engine = _engine = createEngine(background: _settings.background);
+    }
+    int rc;
+    try {
+      rc = await engine.start(_settings);
+    } on Object catch (e) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _status = 'start failed: $e';
+        });
+      }
+      return;
+    }
     _refresh = Timer.periodic(
       const Duration(milliseconds: 250),
-      (_) => setState(() => _stats = _engine.stats()),
+      (_) => setState(() => _stats = engine!.stats ?? _stats),
     );
-    setState(() => _status = rc == 0 ? 'Playing' : 'init failed ($rc)');
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _status = rc == 0 ? 'Playing' : 'init failed ($rc)';
+    });
   }
 
-  void _stop() {
+  Future<void> _stop() async {
     _refresh?.cancel();
     _refresh = null;
-    if (_engine.running) {
-      _stats = _engine.stats();
-      _engine.stop();
+    final engine = _engine;
+    if (engine != null && engine.running) {
+      setState(() => _busy = true);
+      _stats = await engine.stop();
     }
-    if (mounted) setState(() => _status = 'Stopped');
+    if (mounted) {
+      setState(() {
+        _busy = false;
+        _status = 'Stopped';
+      });
+    }
   }
 
   void _change(SpikeSettings s) {
     setState(() => _settings = s);
-    _engine.update(s);
+    _engine?.update(s);
   }
 
   Future<void> _runBenchmark() async {
-    _stop();
+    await _stop();
     setState(() {
       _benchRunning = true;
       _benchLines.clear();
@@ -91,6 +126,7 @@ class _SpikePageState extends State<SpikePage> {
       'MotifForge audio spike results',
       'Platform: ${platformDescription()}',
       if (s != null) ...[
+        'Rendering: ${s.mode}',
         'Settings: ${s.settings.toJson()}',
         'Audio rendered: ${s.audioSeconds.toStringAsFixed(1)} s',
         'Average render load: ${s.loadPercent.toStringAsFixed(1)} %',
@@ -133,13 +169,14 @@ class _SpikePageState extends State<SpikePage> {
 
   @override
   void dispose() {
-    _stop();
+    _refresh?.cancel();
+    _engine?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final running = _engine.running;
+    final running = _running;
     final s = _stats;
     return Scaffold(
       appBar: AppBar(title: const Text('Audio spike')),
@@ -154,11 +191,11 @@ class _SpikePageState extends State<SpikePage> {
             runSpacing: 8,
             children: [
               FilledButton(
-                onPressed: running ? _stop : _start,
+                onPressed: _busy ? null : (running ? _stop : _start),
                 child: Text(running ? 'Stop' : 'Start'),
               ),
               OutlinedButton(
-                onPressed: running ? _engine.tapNote : null,
+                onPressed: running ? () => _engine?.tapNote() : null,
                 child: const Text('Tap note (latency check)'),
               ),
               OutlinedButton(
@@ -178,6 +215,17 @@ class _SpikePageState extends State<SpikePage> {
             subtitle: const Text('Off = silence except tapped notes'),
             value: _settings.band,
             onChanged: (v) => _change(_settings.copyWith(band: v)),
+          ),
+          SwitchListTile(
+            title: const Text('Render in background (applies on restart)'),
+            subtitle: const Text(
+              'Isolate on native, Web Worker + AudioWorklet on web. '
+              'Off = UI thread (for comparison).',
+            ),
+            value: _settings.background,
+            onChanged: running
+                ? null
+                : (v) => _change(_settings.copyWith(background: v)),
           ),
           SwitchListTile(
             title: const Text('Reverb + chorus (applies on restart)'),
@@ -212,6 +260,7 @@ class _SpikePageState extends State<SpikePage> {
           ),
           const Divider(),
           if (s != null) ...[
+            _stat('Rendering on', s.mode),
             _stat('Audio rendered', '${s.audioSeconds.toStringAsFixed(1)} s'),
             _stat(
               'Average render load',

@@ -33,6 +33,9 @@ failure_excerpt() {  # $1 = log file
   echo '```'
 }
 
+# The background engine's Web Worker is compiled separately.
+"$ROOT/tool/build_synth_worker.sh" >"$OUT/worker.build.log" 2>&1
+
 summary="$OUT/summary.md"
 echo "# Headless test: web (Chromium${WEB_WASM:+, Wasm})" >"$summary"
 status=0
@@ -65,10 +68,9 @@ for t in "${TESTS[@]}"; do
     echo
     [ $rc -ne 0 ] && failure_excerpt "$OUT/$t.log"
   } >>"$summary"
-  # Web still renders on the UI thread, which drops out under load: a known
-  # issue until synthesis moves to an AudioWorklet/Worker. Report dropouts,
-  # but still fail on silence or a long start-up gap.
-  strict=(--dropouts-informational)
+  # spike_test includes deliberate UI-thread jank and a look-ahead sweep, so
+  # its audio is reported, not gated. The UI test must play cleanly.
+  strict=()
   [ "$t" = spike_test ] && strict=(--report-only)
   python3 "$ROOT/tool/headless/analyze_audio.py" "$OUT/$t.raw" "$rec_start" "$OUT/$t.log" \
     "${strict[@]}" --json "$OUT/$t.audio.json" >>"$summary" || status=1

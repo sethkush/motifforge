@@ -46,3 +46,7 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Compiled from worker/synth_worker.dart by tool/build_synth_worker.sh
+/web/synth_worker.js
+/web/synth_worker.js.*

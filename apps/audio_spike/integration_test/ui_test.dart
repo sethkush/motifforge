@@ -28,12 +28,14 @@ void main() {
     mark('ui-start');
     await tester.tap(find.text('Start'));
     await tester.pump();
+    await waitFor(tester, find.text('Playing', skipOffstage: false));
     await reveal(tester, find.text('Playing'));
     expect(find.text('Playing'), findsOneWidget);
     await waitReal(tester, const Duration(seconds: 4));
     await tester.pump();
     await reveal(tester, find.text('Device underruns (buffer ran dry)'));
     expect(find.text('Average render load'), findsOneWidget);
+    await reveal(tester, find.text('Rendering on'));
     await screenshot(binding, tester, '02-playing');
 
     // Tap a note while playing (latency check button).
@@ -62,6 +64,7 @@ void main() {
     await tester.tap(find.text('Stop'));
     await tester.pump();
     mark('ui-stop');
+    await waitFor(tester, find.text('Stopped', skipOffstage: false));
     await reveal(tester, find.text('Start'));
     await reveal(tester, find.text('Stopped'));
     expect(find.text('Stopped'), findsOneWidget);

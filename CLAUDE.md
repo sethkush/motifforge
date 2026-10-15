@@ -20,7 +20,7 @@ dart test packages/motif_theory packages/motif_conformance tool/audio_bench   # 
 dart test packages/motif_theory/test/chord_tables_test.dart -N "applied"      # single test by name
 (cd packages/motif_conformance && dart run motif_conformance:report)          # parity table per spec
 (cd tool/audio_bench && dart run audio_bench:bench [file.sf2])                # synth benchmark
-(cd apps/audio_spike && flutter build web --wasm --no-web-resources-cdn)      # spike app web build
+tool/build_synth_worker.sh && (cd apps/audio_spike && flutter build web --wasm --no-web-resources-cdn)   # spike app web build
 ```
 
 Headless end-to-end testing (real app, virtual display, virtual sound card, recorded output analysed for dropouts; see `docs/spikes/m0-audio.md`):
@@ -54,7 +54,7 @@ Design decisions that span packages:
 - **Time is integer ticks, `ticksPerBeat = 480`.** A "beat" is the *meter* beat. With beat unit 3 (compound meters) it maps to an eighth note in MIDI and notation, otherwise to a quarter. Keys, meters, tempi and bands are maps keyed by measure index. Swing is applied in the engine, never stored on notes.
 - **Edits are pure `Song → Song` functions**, wrapped in labelled `Command`s and run against an `EditContext` (Table/Text entry mode, Smart Octave, sticky palette state). Undo is a snapshot stack of immutable `Song`s (default depth 20, to match Hookpad).
 - **The arrangement engine is deterministic**: `render(Song, range) → PerformanceEvent`s. Harmony, bass and drum styles are data files (`assets/styles`, `assets/drums`), not code. Snapshot tests check `song.json → events.json`.
-- **Audio**: we synthesise everything ourselves from SoundFonts with `dart_melty_soundfont`, overridden to the patched copy in `third_party/` because upstream 2.0.0 doesn't compile for the web. Rendering goes in an isolate on native; a web backend sits behind the same interface. The playhead comes from frames actually played, not from timers. The output plugin is provisionally `mp_audio_stream`; device measurements are still open (`docs/spikes/m0-audio.md`).
+- **Audio**: we synthesise everything ourselves from SoundFonts with `dart_melty_soundfont`, overridden to the patched copy in `third_party/` because upstream 2.0.0 doesn't compile for the web. **Audio never renders on the UI thread**: on native a background isolate owns the synth and the device (`mp_audio_stream`, FFI); on web a Web Worker renders and posts straight to an AudioWorklet. Both use backpressure (keep only the target latency queued). The spike's engine layer (`apps/audio_spike/lib/engine/`) is the model for `motif_audio`. The web worker is a separate Dart entry point compiled by `tool/build_synth_worker.sh`; run it before any `flutter build web` or `flutter run -d chrome`.
 - **UI**: Riverpod state. The score is drawn by custom painters, one per line ("system"), with typed hit targets (note body, inner edge, outer edge, chord, flag, measure). A central `KeymapService` tracks *held* keys, because entry depends on them: ↑/↓ or `.`/`,` held while typing a digit.
 - **Interop**: we always read Hookpad's clipboard JSON (`sd`, `octave`, `beat`, `duration`, `isRest`, `fp`). The native file format is versioned JSON (`*.motif`) with a migration chain.
 

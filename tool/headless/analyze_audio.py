@@ -36,8 +36,11 @@ def windows(marks):
             start = open_.pop(("scenario", m["index"]), None)
             if start:
                 label = (
-                    f"scenario {m['index']}: lookahead {start['lookaheadMs']} ms, "
-                    f"stress {start['stressVoices']}, fx {start['effects']}"
+                    f"scenario {m['index']}: "
+                    + (f"{start['mode']}, " if 'mode' in start else "")
+                    + f"lookahead {start['lookaheadMs']} ms, "
+                    f"stress {start['stressVoices']}"
+                    + (f", jank {start['jankMs']} ms" if start.get('jankMs') else "")
                 )
                 yield label, start["epochMs"], m["epochMs"], True
         elif ev == "ui-start":

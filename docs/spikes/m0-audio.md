@@ -86,6 +86,31 @@ without. AAudio starts almost instantly; 30 ms look-ahead is clean, 20 ms is
 below the emulator's burst size. The UI test (drive the buttons, four
 screenshots) passes on the emulator's phone-size screen.
 
+## Rendering off the UI thread
+
+The synth no longer runs on the UI thread (`apps/audio_spike/lib/engine/`):
+
+| Platform | Engine | How |
+|---|---|---|
+| Native (Android, iOS, desktop) | `IsolateEngine` | A long-lived background isolate owns the synth **and** the audio device. `mp_audio_stream` is plain FFI, so it works from any isolate. The UI isolate only sends commands (start, stop, settings, tap note) and receives stats every 250 ms. |
+| Web | `WorkerEngine` | The synth runs in a Web Worker (`worker/synth_worker.dart`, compiled by `tool/build_synth_worker.sh` to `web/synth_worker.js`). The worker posts audio straight to an AudioWorklet (`web/spike_worklet.js`) over a MessageChannel, so the page's main thread is not on the audio path. The worklet reports frames played every ~10 ms, which gives the worker real **backpressure** on the web too. |
+| Any (comparison only) | `UiThreadEngine` | The original design, kept behind the "Render in background" switch. |
+
+All three share `RenderCore` (pure Dart: synth + workload + stats), so the
+worker and the isolate run exactly the same rendering code.
+
+**Measured with deliberate UI stalls** (the UI thread busy for 150 ms every
+400 ms, longer than the 100 ms buffer; `spike_test.dart`):
+
+| Platform | UI-thread rendering | Background rendering |
+|---|---|---|
+| Linux desktop | 60 underruns; recording shows 14 dropouts up to 69 ms | 0 underruns, 0 dropouts |
+| Web (Chromium) | recording had no usable audio in this scenario | 0 dropouts in the recording |
+
+Look-ahead floor with background rendering: Linux clean down to 20 ms;
+web clean down to 30 ms (20 ms: 76 underruns). Device start: 6–34 ms on
+Linux, 7–21 ms on web.
+
 ## Findings from the headless runs
 
 1. **Wall-clock pumping is wrong.** Pushing audio by the wall clock filled
@@ -98,11 +123,10 @@ screenshots) passes on the emulator's phone-size screen.
    it starts in 5–55 ms and plays cleanly at 30 ms look-ahead and above
    (20 ms: occasional underrun). The real engine must configure a low
    device period itself.
-3. **Web needs synthesis off the UI thread.** The web plugin's push has no
-   "full" signal, so web still paces by the wall clock, and rendering on the
-   UI thread gave 3–21 underruns per 8 s scenario in Chromium (a few short
-   dropouts in the recording). Plan: render in an AudioWorklet or Worker
-   (Wasm) behind the `AudioBackend` interface.
+3. **Synthesis must not run on the UI thread.** On web the UI-thread mode
+   gave 3–21 underruns per 8 s scenario even without stalls, and any UI
+   stall longer than the buffer drops out on every platform. **Fixed**: see
+   "Rendering off the UI thread" above.
 4. **Phone-size layout**: the lazy list doesn't build off-screen rows, so
    tests (and later, UI code) must scroll things into view. `PHONE_LAYOUT=true`
    reproduces the phone layout on desktop.

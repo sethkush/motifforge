@@ -28,9 +28,9 @@ jobs:
           cache: true
       - run: flutter pub get
       - name: Build audio spike (web, Wasm + JS fallback)
-        working-directory: apps/audio_spike
         run: >
-          flutter build web --wasm --no-web-resources-cdn
+          tool/build_synth_worker.sh &&
+          cd apps/audio_spike && flutter build web --wasm --no-web-resources-cdn
           --base-href "/${{ github.event.repository.name }}/audio-spike/"
       - name: Assemble site
         run: |

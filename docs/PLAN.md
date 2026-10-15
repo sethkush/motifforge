@@ -332,7 +332,7 @@ number of styles, the same characters and the same meter coverage. Each style
 is programmed by us. Snapshot tests check `song.json → events.json`.
 
 ### 3.6 Audio (`motif_audio`), the main technical risk
-* **Synthesis.** We synthesise all MIDI ourselves from SoundFonts, which gives sample-accurate timing and identical sound on every platform. The candidate is `dart_melty_soundfont`, a pure-Dart SF2 synth. It runs in a background isolate on native platforms. On web we use a Web Worker or AudioWorklet, or swap in a JS SF2 synth behind the same interface.
+* **Synthesis.** We synthesise all MIDI ourselves from SoundFonts, which gives sample-accurate timing and identical sound on every platform, using `dart_melty_soundfont` (pure-Dart SF2 synth, vendored with web fixes). It never runs on the UI thread: a background isolate on native, a Web Worker feeding an AudioWorklet on web. Proven in the M0 spike (`docs/spikes/m0-audio.md`).
 * **Output.** We stream PCM blocks to the device. Candidates are `flutter_soloud`, `mp_audio_stream` and `flutter_pcm_sound`. Which one we use is decided in the M0 spike.
 * **Transport.** A look-ahead scheduler renders ~50–100 ms ahead. The playhead is derived from frames actually played, not from a `Timer`. It also handles loop ranges and count-in.
 * **Audio clips** are decoded once to PCM, then time-placed and mixed. Waveform peaks are precomputed for drawing.
@@ -386,7 +386,7 @@ Each milestone ends with something usable, and its conformance suite runs in CI.
 - [x] First specs in `docs/spec/` (melody, chords, structure, display, keymap) with conformance cases tagged documented / observed / assumed.
 - [x] Workspace, lints, GitHub Actions (format, analyze, test, parity report, JS + Wasm web builds), conformance harness (`packages/motif_conformance`).
 - [x] `motif_theory`: scales, key spelling, degree→pitch, Smart Octave placement, chord builder (types, sus, add/omit, alterations, applied, borrowed, inversions), chord symbols, Roman numerals, colour slots, relative tonic. Table tests for every scale.
-- [~] **Audio spike** (`docs/spikes/m0-audio.md`): CPU side passed on the Dart VM, JS and Wasm. Two web blockers in `dart_melty_soundfont` found and patched (`third_party/`). Output plugin provisionally `mp_audio_stream`. **Open:** device runs on every platform.
+- [x] **Audio spike** (`docs/spikes/m0-audio.md`): CPU passes on the Dart VM, JS and Wasm; web blockers in `dart_melty_soundfont` patched (`third_party/`); synthesis runs off the UI thread (isolate / Web Worker + AudioWorklet) with backpressure; verified headlessly on Linux and web, including under UI stalls (Android emulator: see CI). A manual pass on real phones is still worthwhile.
 - [x] Licence: **ISC** for all code (see `LICENSE`). Bundled assets keep their own licences and are listed in `assets/LICENSES.md`.
 - [x] CONTRIBUTING with the clean-room rules, asset-licence ledger.
 

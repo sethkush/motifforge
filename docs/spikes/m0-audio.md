@@ -106,10 +106,11 @@ worker and the isolate run exactly the same rendering code.
 |---|---|---|
 | Linux desktop | 60 underruns; recording shows 14 dropouts up to 69 ms | 0 underruns, 0 dropouts |
 | Web (Chromium) | recording had no usable audio in this scenario | 0 dropouts in the recording |
+| Android emulator (CI) | 321 underruns in 20 s | 0 underruns |
 
 Look-ahead floor with background rendering: Linux clean down to 20 ms;
-web clean down to 30 ms (20 ms: 76 underruns). Device start: 6–34 ms on
-Linux, 7–21 ms on web.
+web and Android clean down to 30 ms (20 ms: 76 and 531 underruns). Device
+start: 6–34 ms on Linux, 7–21 ms on web, 0–6 ms on Android.
 
 ## Findings from the headless runs
 

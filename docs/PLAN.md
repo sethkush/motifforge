@@ -386,7 +386,7 @@ Each milestone ends with something usable, and its conformance suite runs in CI.
 - [x] First specs in `docs/spec/` (melody, chords, structure, display, keymap) with conformance cases tagged documented / observed / assumed.
 - [x] Workspace, lints, GitHub Actions (format, analyze, test, parity report, JS + Wasm web builds), conformance harness (`packages/motif_conformance`).
 - [x] `motif_theory`: scales, key spelling, degree→pitch, Smart Octave placement, chord builder (types, sus, add/omit, alterations, applied, borrowed, inversions), chord symbols, Roman numerals, colour slots, relative tonic. Table tests for every scale.
-- [x] **Audio spike** (`docs/spikes/m0-audio.md`): CPU passes on the Dart VM, JS and Wasm; web blockers in `dart_melty_soundfont` patched (`third_party/`); synthesis runs off the UI thread (isolate / Web Worker + AudioWorklet) with backpressure; verified headlessly on Linux and web, including under UI stalls (Android emulator: see CI). A manual pass on real phones is still worthwhile.
+- [x] **Audio spike** (`docs/spikes/m0-audio.md`): CPU passes on the Dart VM, JS and Wasm; web blockers in `dart_melty_soundfont` patched (`third_party/`); synthesis runs off the UI thread (isolate / Web Worker + AudioWorklet) with backpressure; verified headlessly on Linux, web and the Android emulator, including under UI stalls. A manual pass on real phones is still worthwhile.
 - [x] Licence: **ISC** for all code (see `LICENSE`). Bundled assets keep their own licences and are listed in `assets/LICENSES.md`.
 - [x] CONTRIBUTING with the clean-room rules, asset-licence ledger.
 

@@ -52,11 +52,11 @@ try:
 except (FileNotFoundError, ValueError):
     print("No measurement report found; see spike_test.log."); sys.exit()
 print(f"{r['platform']}, {r['secondsPerScenario']} s per scenario\n")
-print("| Look-ahead ms | Stress | FX | Init | Load % | Peak chunk ms | Underruns | Start delay ms |")
-print("|---|---|---|---|---|---|---|---|")
+print("| Rendering | UI stall ms | Look-ahead ms | Stress | Init | Load % | Peak chunk ms | Underruns | Start delay ms |")
+print("|---|---|---|---|---|---|---|---|---|")
 for p in r["playback"]:
-    print(f"| {p['lookaheadMs']} | {p['stressVoices']} | {p['effects']} | {p['initResult']} | "
-          f"{p['loadPercent']} | {p['peakChunkMs']} | {p['underruns']} | {p.get('startDelayMs')} |")
+    print(f"| {p.get('mode', '-')} | {p.get('jankMs', 0)} | {p['lookaheadMs']} | {p['stressVoices']} | "
+          f"{p['initResult']} | {p['loadPercent']} | {p['peakChunkMs']} | {p['underruns']} | {p.get('startDelayMs')} |")
 print("\n| CPU benchmark | Realtime factor | p99 chunk ms |\n|---|---|---|")
 for b in r["benchmark"]:
     print(f"| {b['scenario']} | {b['realTimeFactor']}x | {b['p99ChunkMs']} |")
